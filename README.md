@@ -7,24 +7,48 @@ Markdown を PDF に変換する GitHub Action です。
 - 日本語フォント対応（Noto CJK フォント）
 - Mermaid ダイアグラムの自動変換
 - 目次の自動生成
+- アーティファクト・リリース自動作成
 
 ## 使い方
+
+### 基本（PDFのみ生成）
 
 ```yaml
 - uses: linkbal/md2pdf@v1
   with:
     input_dir: 'docs'
-    output_dir: 'output'
 ```
 
-### 入力パラメータ
+### リリース付き
+
+```yaml
+- uses: linkbal/md2pdf@v1
+  with:
+    input_dir: 'docs'
+    create_release: true
+    release_name_prefix: '提案書'
+```
+
+## 入力パラメータ
 
 | パラメータ | 説明 | デフォルト |
 |-----------|------|-----------|
 | `input_dir` | Markdownファイルのディレクトリ | `docs` |
 | `output_dir` | PDF出力ディレクトリ | `output` |
+| `upload_artifact` | アーティファクトをアップロードするか | `true` |
+| `artifact_name` | アーティファクト名 | `pdf-output` |
+| `retention_days` | アーティファクトの保持日数 | `30` |
+| `create_release` | GitHub Releaseを作成するか | `false` |
+| `release_name_prefix` | リリース名のプレフィックス | `Release` |
+| `keep_releases` | 保持するリリース数（0で無制限） | `5` |
 
-### 完全な例
+## 出力
+
+| 出力 | 説明 |
+|------|------|
+| `tag_name` | 作成されたタグ名（create_release=true時） |
+
+## 完全な例
 
 ```yaml
 name: Generate PDF
@@ -47,48 +71,10 @@ jobs:
       - uses: linkbal/md2pdf@v1
         with:
           input_dir: 'docs'
-          output_dir: 'output'
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: pdf-output
-          path: output/**/*.pdf
-```
-
-### GitHub Release 付きの例
-
-```yaml
-name: Generate PDF and Release
-
-on:
-  push:
-    branches: [main]
-    paths: ['docs/**']
-
-jobs:
-  pdf:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: linkbal/md2pdf@v1
-        with:
-          input_dir: 'docs'
-
-      - name: タグを作成
-        id: tag
-        run: |
-          TAG="v$(date +'%Y%m%d')-${GITHUB_SHA::7}"
-          echo "name=$TAG" >> $GITHUB_OUTPUT
-          git tag $TAG && git push origin $TAG
-
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.tag.outputs.name }}
-          files: output/**/*.pdf
+          artifact_name: 'my-pdf'
+          create_release: true
+          release_name_prefix: 'ドキュメント'
+          keep_releases: 5
 ```
 
 ## ローカルでの実行

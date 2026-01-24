@@ -15,6 +15,35 @@ inputs:
     description: 'PDFを出力するディレクトリ'
     required: false
     default: 'output'
+  upload_artifact:
+    description: 'アーティファクトをアップロードするか'
+    required: false
+    default: 'true'
+  artifact_name:
+    description: 'アーティファクト名'
+    required: false
+    default: 'pdf-output'
+  retention_days:
+    description: 'アーティファクトの保持日数'
+    required: false
+    default: '30'
+  create_release:
+    description: 'GitHub Releaseを作成するか'
+    required: false
+    default: 'false'
+  release_name_prefix:
+    description: 'リリース名のプレフィックス'
+    required: false
+    default: 'Release'
+  keep_releases:
+    description: '保持するリリース数（0で無制限）'
+    required: false
+    default: '5'
+
+outputs:
+  tag_name:
+    description: '作成されたタグ名'
+    value: ${{ steps.tag.outputs.name }}
 
 runs:
   using: 'composite'
@@ -38,3 +67,42 @@ runs:
       run: |
         echo "Generated PDFs:"
         ls -la ${{ inputs.output_dir }}/
+
+    - name: アーティファクトをアップロード
+      if: inputs.upload_artifact == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: ${{ inputs.output_dir }}/**/*.pdf
+        retention-days: ${{ inputs.retention_days }}
+
+    - name: タグを作成
+      if: inputs.create_release == 'true'
+      id: tag
+      shell: bash
+      run: |
+        TAG="v$(date +'%Y%m%d')-${GITHUB_SHA::7}"
+        echo "name=$TAG" >> $GITHUB_OUTPUT
+        if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then
+          echo "Tag $TAG already exists, skipping creation"
+        else
+          git tag "$TAG" && git push origin "$TAG"
+        fi
+
+    - name: リリースを作成
+      if: inputs.create_release == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.tag.outputs.name }}
+        name: ${{ inputs.release_name_prefix }} ${{ steps.tag.outputs.name }}
+        files: ${{ inputs.output_dir }}/**/*.pdf
+        generate_release_notes: true
+
+    - name: 古いリリースを削除
+      if: inputs.create_release == 'true' && inputs.keep_releases != '0'
+      uses: dev-drprasad/delete-older-releases@v0.3.4
+      with:
+        keep_latest: ${{ inputs.keep_releases }}
+        delete_tags: true
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
