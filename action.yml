@@ -1,0 +1,40 @@
+name: 'md2pdf'
+description: 'Markdown を PDF に変換（日本語・Mermaid対応）'
+author: 'Linkbal Inc.'
+
+branding:
+  icon: 'file-text'
+  color: 'blue'
+
+inputs:
+  input_dir:
+    description: 'Markdownファイルがあるディレクトリ'
+    required: false
+    default: 'docs'
+  output_dir:
+    description: 'PDFを出力するディレクトリ'
+    required: false
+    default: 'output'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Dockerイメージをビルド
+      shell: bash
+      run: |
+        docker build -t md2pdf ${{ github.action_path }}/scripts
+
+    - name: PDFを生成
+      shell: bash
+      run: |
+        mkdir -p ${{ inputs.output_dir }}
+        docker run --rm \
+          -v ${{ github.workspace }}/${{ inputs.input_dir }}:/work/input:ro \
+          -v ${{ github.workspace }}/${{ inputs.output_dir }}:/work/output \
+          md2pdf /work/input /work/output
+
+    - name: 生成されたPDFを確認
+      shell: bash
+      run: |
+        echo "Generated PDFs:"
+        ls -la ${{ inputs.output_dir }}/
