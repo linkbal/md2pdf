@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Markdown to PDF/DOCX Conversion Script with Mermaid Support
+# Markdown to PDF・DOCX Conversion Script with Mermaid Support
 # Usage: ./md2pdf.sh [input_dir] [output_dir]
 # Example: ./md2pdf.sh ./proposal ./pdf
 # Example: ./md2pdf.sh (converts all .md files from . directory to ./pdf)
 #
 # Environment variables:
-#   OUTPUT_DOCX=true     - Also generate DOCX files
-#   DOCX_TEMPLATE=/path  - Path to reference DOCX template
+#   OUTPUT_FORMATS=pdf,docx  - Output formats (comma-separated)
+#   DOCX_TEMPLATE=/path      - Path to reference DOCX template
 #
 # Requirements:
 # - pandoc
@@ -26,8 +26,18 @@ fi
 OUTPUT_DIR=${2:-"./pdf"}
 
 # 環境変数からオプションを取得
-OUTPUT_DOCX=${OUTPUT_DOCX:-"false"}
+OUTPUT_FORMATS=${OUTPUT_FORMATS:-"pdf,docx"}
 DOCX_TEMPLATE=${DOCX_TEMPLATE:-""}
+
+# 出力形式を判定
+OUTPUT_PDF=false
+OUTPUT_DOCX=false
+if [[ "$OUTPUT_FORMATS" == *"pdf"* ]]; then
+    OUTPUT_PDF=true
+fi
+if [[ "$OUTPUT_FORMATS" == *"docx"* ]]; then
+    OUTPUT_DOCX=true
+fi
 
 # パスの末尾のスラッシュを削除
 INPUT_DIR=${INPUT_DIR%/}
@@ -59,12 +69,12 @@ count=0
 success_count=0
 
 echo "========================================"
-echo "Markdown to PDF/DOCX Converter"
+echo "Markdown to PDF・DOCX Converter"
 echo "========================================"
 echo "入力ディレクトリ: $INPUT_DIR"
 echo "出力ディレクトリ: $OUTPUT_DIR"
 echo "処理するファイル数: ${#md_files[@]}"
-echo "DOCX出力: $OUTPUT_DOCX"
+echo "出力形式: $OUTPUT_FORMATS"
 if [ -n "$DOCX_TEMPLATE" ]; then
     echo "DOCXテンプレート: $DOCX_TEMPLATE"
 fi
@@ -181,35 +191,37 @@ for md_file in "${md_files[@]}"; do
     local_success=true
 
     # PDF変換
-    echo "  -> PDF: $pdf_file"
-    if pandoc "$temp_md_file" \
-        -o "$pdf_file" \
-        --resource-path="$(dirname "$md_file"):$INPUT_DIR:$TEMP_DIR" \
-        --pdf-engine=xelatex \
-        --toc \
-        --toc-depth=3 \
-        -V "papersize=a4" \
-        -V "geometry:top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm" \
-        -V "fontsize=11pt" \
-        -V "linestretch=1.2" \
-        -V "documentclass=book" \
-        -V "classoption=oneside" \
-        -V "mainfont=Liberation Serif" \
-        -V "sansfont=Liberation Sans" \
-        -V "monofont=Liberation Mono" \
-        -V "colorlinks=true" \
-        -V "linkcolor=blue" \
-        -V "urlcolor=blue" \
-        -V "toccolor=black" \
-        -H "$HEADER_FILE" \
-        -V "block-headings=true"; then
-        echo "     成功"
-    else
-        echo "     失敗"
-        local_success=false
+    if [ "$OUTPUT_PDF" = "true" ]; then
+        echo "  -> PDF: $pdf_file"
+        if pandoc "$temp_md_file" \
+            -o "$pdf_file" \
+            --resource-path="$(dirname "$md_file"):$INPUT_DIR:$TEMP_DIR" \
+            --pdf-engine=xelatex \
+            --toc \
+            --toc-depth=3 \
+            -V "papersize=a4" \
+            -V "geometry:top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm" \
+            -V "fontsize=11pt" \
+            -V "linestretch=1.2" \
+            -V "documentclass=book" \
+            -V "classoption=oneside" \
+            -V "mainfont=Liberation Serif" \
+            -V "sansfont=Liberation Sans" \
+            -V "monofont=Liberation Mono" \
+            -V "colorlinks=true" \
+            -V "linkcolor=blue" \
+            -V "urlcolor=blue" \
+            -V "toccolor=black" \
+            -H "$HEADER_FILE" \
+            -V "block-headings=true"; then
+            echo "     成功"
+        else
+            echo "     失敗"
+            local_success=false
+        fi
     fi
 
-    # DOCX変換（オプション）
+    # DOCX変換
     if [ "$OUTPUT_DOCX" = "true" ]; then
         echo "  -> DOCX: $docx_file"
 

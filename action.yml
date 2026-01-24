@@ -15,10 +15,10 @@ inputs:
     description: '出力ディレクトリ'
     required: false
     default: 'output'
-  output_docx:
-    description: 'DOCXを生成するか'
+  output_formats:
+    description: '出力形式（カンマ区切り: pdf,docx）'
     required: false
-    default: 'true'
+    default: 'pdf,docx'
   docx_template:
     description: 'DOCXテンプレートファイルのパス（リポジトリからの相対パス）'
     required: false
@@ -61,10 +61,10 @@ runs:
       run: |
         docker build -t md2pdf ${{ github.action_path }}/scripts
 
-    - name: PDF/DOCXを生成
+    - name: PDF・DOCXを生成
       shell: bash
       env:
-        OUTPUT_DOCX: ${{ inputs.output_docx }}
+        OUTPUT_FORMATS: ${{ inputs.output_formats }}
         DOCX_TEMPLATE_INPUT: ${{ inputs.docx_template }}
       run: |
         mkdir -p ${{ inputs.output_dir }}
@@ -80,7 +80,7 @@ runs:
         docker run --rm \
           -v ${{ github.workspace }}/${{ inputs.input_dir }}:/work/input:ro \
           -v ${{ github.workspace }}/${{ inputs.output_dir }}:/work/output \
-          -e OUTPUT_DOCX="$OUTPUT_DOCX" \
+          -e OUTPUT_FORMATS="$OUTPUT_FORMATS" \
           $TEMPLATE_MOUNT $TEMPLATE_ENV \
           md2pdf /work/input /work/output
 
