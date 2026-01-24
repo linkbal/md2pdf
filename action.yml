@@ -16,9 +16,9 @@ inputs:
     required: false
     default: 'output'
   output_docx:
-    description: 'DOCXも生成するか'
+    description: 'DOCXを生成するか'
     required: false
-    default: 'false'
+    default: 'true'
   docx_template:
     description: 'DOCXテンプレートファイルのパス（リポジトリからの相対パス）'
     required: false
