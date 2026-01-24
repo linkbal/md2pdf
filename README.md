@@ -12,7 +12,7 @@ Markdown を PDF・DOCX に変換する GitHub Action です。
 
 ## 使い方
 
-### 基本（PDFのみ）
+### 基本（PDF・DOCX両方生成）
 
 ```yaml
 - uses: linkbal/md2pdf@v1
@@ -20,13 +20,13 @@ Markdown を PDF・DOCX に変換する GitHub Action です。
     input_dir: 'docs'
 ```
 
-### PDF + DOCX
+### PDFのみ
 
 ```yaml
 - uses: linkbal/md2pdf@v1
   with:
     input_dir: 'docs'
-    output_docx: true
+    output_docx: false
 ```
 
 ### DOCX テンプレート指定
@@ -56,7 +56,7 @@ Markdown を PDF・DOCX に変換する GitHub Action です。
 |-----------|------|-----------|
 | `input_dir` | Markdownファイルのディレクトリ | `docs` |
 | `output_dir` | 出力ディレクトリ | `output` |
-| `output_docx` | DOCXも生成するか | `false` |
+| `output_docx` | DOCXを生成するか | `true` |
 | `docx_template` | DOCXテンプレートのパス | (なし) |
 | `upload_artifact` | アーティファクトをアップロードするか | `true` |
 | `artifact_name` | アーティファクト名 | `docs-output` |
