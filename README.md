@@ -1,6 +1,6 @@
 # md2pdf
 
-Markdown を PDF/DOCX に変換する GitHub Action です。
+Markdown を PDF・DOCX に変換する GitHub Action です。
 
 ## 特徴
 
@@ -59,7 +59,7 @@ Markdown を PDF/DOCX に変換する GitHub Action です。
 | `output_docx` | DOCXも生成するか | `false` |
 | `docx_template` | DOCXテンプレートのパス | (なし) |
 | `upload_artifact` | アーティファクトをアップロードするか | `true` |
-| `artifact_name` | アーティファクト名 | `pdf-output` |
+| `artifact_name` | アーティファクト名 | `docs-output` |
 | `retention_days` | アーティファクトの保持日数 | `30` |
 | `create_release` | GitHub Releaseを作成するか | `false` |
 | `release_name_prefix` | リリース名のプレフィックス | `Release` |
@@ -74,7 +74,7 @@ Markdown を PDF/DOCX に変換する GitHub Action です。
 ## 完全な例
 
 ```yaml
-name: Generate PDF/DOCX
+name: Generate Documents
 
 on:
   push:

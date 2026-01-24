@@ -1,5 +1,5 @@
 name: 'md2pdf'
-description: 'Markdown を PDF/DOCX に変換（日本語・Mermaid対応）'
+description: 'Markdown を PDF・DOCX に変換（日本語・Mermaid対応）'
 author: 'Linkbal Inc.'
 
 branding:
@@ -30,7 +30,7 @@ inputs:
   artifact_name:
     description: 'アーティファクト名'
     required: false
-    default: 'pdf-output'
+    default: 'docs-output'
   retention_days:
     description: 'アーティファクトの保持日数'
     required: false
