@@ -1,9 +1,13 @@
 #!/bin/bash
 
-# Markdown to PDF Conversion Script with Mermaid Support
+# Markdown to PDF/DOCX Conversion Script with Mermaid Support
 # Usage: ./md2pdf.sh [input_dir] [output_dir]
 # Example: ./md2pdf.sh ./proposal ./pdf
 # Example: ./md2pdf.sh (converts all .md files from . directory to ./pdf)
+#
+# Environment variables:
+#   OUTPUT_DOCX=true     - Also generate DOCX files
+#   DOCX_TEMPLATE=/path  - Path to reference DOCX template
 #
 # Requirements:
 # - pandoc
@@ -20,6 +24,10 @@ else
   INPUT_DIR=${1:-"."}
 fi
 OUTPUT_DIR=${2:-"./pdf"}
+
+# 環境変数からオプションを取得
+OUTPUT_DOCX=${OUTPUT_DOCX:-"false"}
+DOCX_TEMPLATE=${DOCX_TEMPLATE:-""}
 
 # パスの末尾のスラッシュを削除
 INPUT_DIR=${INPUT_DIR%/}
@@ -51,11 +59,15 @@ count=0
 success_count=0
 
 echo "========================================"
-echo "Markdown to PDF Converter"
+echo "Markdown to PDF/DOCX Converter"
 echo "========================================"
 echo "入力ディレクトリ: $INPUT_DIR"
 echo "出力ディレクトリ: $OUTPUT_DIR"
 echo "処理するファイル数: ${#md_files[@]}"
+echo "DOCX出力: $OUTPUT_DOCX"
+if [ -n "$DOCX_TEMPLATE" ]; then
+    echo "DOCXテンプレート: $DOCX_TEMPLATE"
+fi
 echo "========================================"
 
 # Mermaidダイアグラムを画像に変換する関数
@@ -149,11 +161,12 @@ for md_file in "${md_files[@]}"; do
     output_dir_path="$OUTPUT_DIR/$dir_path"
     mkdir -p "$output_dir_path"
 
-    # 出力PDFパスを決定
+    # 出力ファイルパスを決定
     pdf_file="$OUTPUT_DIR/${rel_path%.md}.pdf"
+    docx_file="$OUTPUT_DIR/${rel_path%.md}.docx"
 
     echo ""
-    echo "変換中: $md_file -> $pdf_file"
+    echo "変換中: $md_file"
 
     # Mermaidダイアグラムを処理
     temp_md_file="$TEMP_DIR/$(basename "$md_file")"
@@ -165,7 +178,10 @@ for md_file in "${md_files[@]}"; do
         HEADER_FILE="$(dirname "$0")/header.tex"
     fi
 
-    # Pandocを使って書籍スタイルのPDFに変換
+    local_success=true
+
+    # PDF変換
+    echo "  -> PDF: $pdf_file"
     if pandoc "$temp_md_file" \
         -o "$pdf_file" \
         --resource-path="$(dirname "$md_file"):$INPUT_DIR:$TEMP_DIR" \
@@ -187,10 +203,37 @@ for md_file in "${md_files[@]}"; do
         -V "toccolor=black" \
         -H "$HEADER_FILE" \
         -V "block-headings=true"; then
-        ((++success_count))
-        echo "  -> 成功"
+        echo "     成功"
     else
-        echo "  -> 失敗"
+        echo "     失敗"
+        local_success=false
+    fi
+
+    # DOCX変換（オプション）
+    if [ "$OUTPUT_DOCX" = "true" ]; then
+        echo "  -> DOCX: $docx_file"
+
+        # テンプレートオプションを構築
+        docx_opts=()
+        if [ -n "$DOCX_TEMPLATE" ] && [ -f "$DOCX_TEMPLATE" ]; then
+            docx_opts+=("--reference-doc=$DOCX_TEMPLATE")
+        fi
+
+        if pandoc "$temp_md_file" \
+            -o "$docx_file" \
+            --resource-path="$(dirname "$md_file"):$INPUT_DIR:$TEMP_DIR" \
+            --toc \
+            --toc-depth=3 \
+            "${docx_opts[@]}"; then
+            echo "     成功"
+        else
+            echo "     失敗"
+            local_success=false
+        fi
+    fi
+
+    if [ "$local_success" = true ]; then
+        ((++success_count))
     fi
     ((++count))
 done

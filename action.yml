@@ -1,5 +1,5 @@
 name: 'md2pdf'
-description: 'Markdown を PDF に変換（日本語・Mermaid対応）'
+description: 'Markdown を PDF/DOCX に変換（日本語・Mermaid対応）'
 author: 'Linkbal Inc.'
 
 branding:
@@ -12,9 +12,17 @@ inputs:
     required: false
     default: 'docs'
   output_dir:
-    description: 'PDFを出力するディレクトリ'
+    description: '出力ディレクトリ'
     required: false
     default: 'output'
+  output_docx:
+    description: 'DOCXも生成するか'
+    required: false
+    default: 'false'
+  docx_template:
+    description: 'DOCXテンプレートファイルのパス（リポジトリからの相対パス）'
+    required: false
+    default: ''
   upload_artifact:
     description: 'アーティファクトをアップロードするか'
     required: false
@@ -53,27 +61,43 @@ runs:
       run: |
         docker build -t md2pdf ${{ github.action_path }}/scripts
 
-    - name: PDFを生成
+    - name: PDF/DOCXを生成
       shell: bash
+      env:
+        OUTPUT_DOCX: ${{ inputs.output_docx }}
+        DOCX_TEMPLATE_INPUT: ${{ inputs.docx_template }}
       run: |
         mkdir -p ${{ inputs.output_dir }}
+
+        # テンプレートマウントオプションを構築
+        TEMPLATE_MOUNT=""
+        TEMPLATE_ENV=""
+        if [ -n "$DOCX_TEMPLATE_INPUT" ] && [ -f "${{ github.workspace }}/$DOCX_TEMPLATE_INPUT" ]; then
+          TEMPLATE_MOUNT="-v ${{ github.workspace }}/$DOCX_TEMPLATE_INPUT:/work/template.docx:ro"
+          TEMPLATE_ENV="-e DOCX_TEMPLATE=/work/template.docx"
+        fi
+
         docker run --rm \
           -v ${{ github.workspace }}/${{ inputs.input_dir }}:/work/input:ro \
           -v ${{ github.workspace }}/${{ inputs.output_dir }}:/work/output \
+          -e OUTPUT_DOCX="$OUTPUT_DOCX" \
+          $TEMPLATE_MOUNT $TEMPLATE_ENV \
           md2pdf /work/input /work/output
 
-    - name: 生成されたPDFを確認
+    - name: 生成されたファイルを確認
       shell: bash
       run: |
-        echo "Generated PDFs:"
-        ls -la ${{ inputs.output_dir }}/
+        echo "Generated files:"
+        find ${{ inputs.output_dir }} -type f \( -name "*.pdf" -o -name "*.docx" \) -exec ls -la {} \;
 
     - name: アーティファクトをアップロード
       if: inputs.upload_artifact == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifact_name }}
-        path: ${{ inputs.output_dir }}/**/*.pdf
+        path: |
+          ${{ inputs.output_dir }}/**/*.pdf
+          ${{ inputs.output_dir }}/**/*.docx
         retention-days: ${{ inputs.retention_days }}
 
     - name: タグを作成
@@ -95,7 +119,9 @@ runs:
       with:
         tag_name: ${{ steps.tag.outputs.name }}
         name: ${{ inputs.release_name_prefix }} ${{ steps.tag.outputs.name }}
-        files: ${{ inputs.output_dir }}/**/*.pdf
+        files: |
+          ${{ inputs.output_dir }}/**/*.pdf
+          ${{ inputs.output_dir }}/**/*.docx
         generate_release_notes: true
 
     - name: 古いリリースを削除
