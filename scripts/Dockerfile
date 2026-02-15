@@ -22,8 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install mermaid-cli
 RUN npm install -g @mermaid-js/mermaid-cli
 
-# Puppeteer config for mmdc (mermaid-cli) - accessible to non-root user
-RUN echo '{"executablePath": "/usr/bin/chromium", "args": []}' > /usr/local/share/puppeteer-config.json
+# Puppeteer config for mmdc (mermaid-cli) with --no-sandbox for root execution
+RUN echo '{"executablePath": "/usr/bin/chromium", "args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > /usr/local/share/puppeteer-config.json
 
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
