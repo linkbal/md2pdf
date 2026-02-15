@@ -119,7 +119,7 @@ process_mermaid() {
 
             echo "$mermaid_content" > "$mermaid_file"
 
-            # Convert mermaid to image (with Dev Container support)
+            # Convert mermaid to image (with headless/Docker environment support)
             local error_output
             local conversion_success
             local -a mmdc_opts=(-i "$mermaid_file" -o "$png_file" -t neutral -b white --width 800 --height 600)
@@ -130,7 +130,7 @@ process_mermaid() {
             fi
 
             if command -v xvfb-run &> /dev/null; then
-                # Use xvfb-run in Dev Container environment
+                # Use xvfb-run in headless environment
                 if error_output=$(xvfb-run -a mmdc "${mmdc_opts[@]}" 2>&1); then
                     conversion_success=true
                 else
