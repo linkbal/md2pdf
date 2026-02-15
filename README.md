@@ -146,6 +146,23 @@ docker run --rm \
   md2pdf
 ```
 
+### ローカル実行時のセキュリティ
+
+Dockerコンテナはrootユーザーで実行されます。これはGitHub Actionsのワークスペースマウントとの互換性を確保するためです。
+
+セキュリティを強化したい場合は、`--user`フラグを使用して非rootユーザーで実行できます：
+
+```bash
+docker run --rm \
+  --user $(id -u):$(id -g) \
+  --security-opt seccomp=unconfined \
+  -v /path/to/docs:/work/input:ro \
+  -v /path/to/output:/work/output \
+  md2pdf
+```
+
+**注意**: 非rootユーザーで実行する場合、`--security-opt seccomp=unconfined`オプションが必要です（Chromiumサンドボックスの有効化のため）。
+
 ## ライセンス
 
 MIT
