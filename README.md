@@ -44,6 +44,7 @@ A GitHub Action that converts Markdown to PDF and DOCX.
 - uses: linkbal/md2pdf@v1
   with:
     input_dir: 'docs'
+    output_formats: 'pdf,docx'
     docx_template: 'templates/custom.docx'
 ```
 
