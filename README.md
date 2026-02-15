@@ -44,7 +44,6 @@ A GitHub Action that converts Markdown to PDF and DOCX.
 - uses: linkbal/md2pdf@v1
   with:
     input_dir: 'docs'
-    output_docx: true
     docx_template: 'templates/custom.docx'
 ```
 
@@ -54,7 +53,6 @@ A GitHub Action that converts Markdown to PDF and DOCX.
 - uses: linkbal/md2pdf@v1
   with:
     input_dir: 'docs'
-    output_docx: true
     create_release: true
     release_name_prefix: 'Proposal'
 ```
@@ -103,7 +101,6 @@ jobs:
       - uses: linkbal/md2pdf@v1
         with:
           input_dir: 'docs'
-          output_docx: true
           docx_template: 'templates/style.docx'
           create_release: true
           release_name_prefix: 'Documentation'
@@ -165,20 +162,27 @@ docker run --rm \
 
 ### Security Considerations for Local Execution
 
-The Docker container runs as root user. This is to ensure compatibility with GitHub Actions workspace mounts.
+The Docker container runs as root user with `--no-sandbox` flag for Chromium. This is to ensure compatibility with GitHub Actions workspace mounts.
 
-For enhanced security, you can run as a non-root user using the `--user` flag:
+For enhanced security, you can run as a non-root user with Chromium sandbox enabled:
 
 ```bash
+# Create a Puppeteer config without --no-sandbox
+echo '{"executablePath": "/usr/bin/chromium", "args": []}' > /tmp/puppeteer-config.json
+
 docker run --rm \
   --user $(id -u):$(id -g) \
   --security-opt seccomp=unconfined \
   -v /path/to/docs:/work/input:ro \
   -v /path/to/output:/work/output \
+  -v /tmp/puppeteer-config.json:/work/puppeteer-config.json:ro \
+  -e MMDC_PUPPETEER_CONFIG=/work/puppeteer-config.json \
   md2pdf
 ```
 
-**Note**: When running as a non-root user, the `--security-opt seccomp=unconfined` option is required to enable the Chromium sandbox.
+**Note**: When running as a non-root user:
+- `--security-opt seccomp=unconfined` is required to enable the Chromium sandbox
+- Override `MMDC_PUPPETEER_CONFIG` with a config that removes `--no-sandbox` flags
 
 ## License
 

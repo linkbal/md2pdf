@@ -64,6 +64,10 @@ fi
 
 # Puppeteer設定ファイル（Docker環境用）
 PUPPETEER_CONFIG=${MMDC_PUPPETEER_CONFIG:-""}
+if [ -n "$PUPPETEER_CONFIG" ] && [ ! -f "$PUPPETEER_CONFIG" ]; then
+    echo "警告: MMDC_PUPPETEER_CONFIG が設定されていますが、ファイルが存在しません: $PUPPETEER_CONFIG"
+    echo "Warning: MMDC_PUPPETEER_CONFIG is set but file does not exist: $PUPPETEER_CONFIG"
+fi
 
 # Markdownファイルを検索して配列に格納
 mapfile -t md_files < <(find "$INPUT_DIR" -name "*.md" -not -path "*/node_modules/*" -not -path "*/.git/*")
