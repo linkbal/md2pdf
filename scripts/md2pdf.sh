@@ -118,11 +118,11 @@ process_mermaid() {
             # mermaidを画像に変換（Dev Container環境対応）
             local error_output
             local conversion_success
-            local mmdc_opts="-i $mermaid_file -o $png_file -t neutral -b white --width 800 --height 600"
+            local mmdc_opts="-i \"$mermaid_file\" -o \"$png_file\" -t neutral -b white --width 800 --height 600"
 
             # Puppeteer設定ファイルがある場合は追加
             if [ -n "$PUPPETEER_CONFIG" ] && [ -f "$PUPPETEER_CONFIG" ]; then
-                mmdc_opts="$mmdc_opts -p $PUPPETEER_CONFIG"
+                mmdc_opts="$mmdc_opts -p \"$PUPPETEER_CONFIG\""
             fi
 
             if command -v xvfb-run &> /dev/null; then
