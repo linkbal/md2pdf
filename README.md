@@ -124,7 +124,7 @@ jobs:
 |----------|-------------|---------|
 | `OUTPUT_FORMATS` | Output formats (comma-separated: `pdf`, `docx`) | `pdf,docx` |
 | `DOCX_TEMPLATE` | Path to reference DOCX template | (none) |
-| `MMDC_PUPPETEER_CONFIG` | Path to Puppeteer config JSON for mermaid-cli | (none) (`/usr/local/share/puppeteer-config.json` in Docker) |
+| `MMDC_PUPPETEER_CONFIG` | Path to Puppeteer config JSON for mermaid-cli | (none in local execution, `/usr/local/share/puppeteer-config.json` in Docker) |
 
 ### Examples
 
