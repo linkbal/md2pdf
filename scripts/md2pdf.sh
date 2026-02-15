@@ -6,8 +6,9 @@
 # Example: ./md2pdf.sh (converts all .md files from . directory to ./pdf)
 #
 # Environment variables:
-#   OUTPUT_FORMATS=pdf,docx  - Output formats (comma-separated)
-#   DOCX_TEMPLATE=/path      - Path to reference DOCX template
+#   OUTPUT_FORMATS=pdf,docx       - Output formats (comma-separated)
+#   DOCX_TEMPLATE=/path           - Path to reference DOCX template
+#   MMDC_PUPPETEER_CONFIG=/path   - Path to Puppeteer config JSON for mermaid-cli (mmdc)
 #
 # Requirements:
 # - pandoc
