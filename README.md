@@ -1,18 +1,18 @@
 # md2pdf
 
-Markdown を PDF・DOCX に変換する GitHub Action です。
+A GitHub Action that converts Markdown to PDF and DOCX.
 
-## 特徴
+## Features
 
-- 日本語フォント対応（Noto CJK フォント）
-- Mermaid ダイアグラムの自動変換
-- 目次の自動生成
-- DOCX出力対応（テンプレート指定可能）
-- アーティファクト・リリース自動作成
+- Japanese font support (Noto CJK fonts)
+- Automatic Mermaid diagram conversion
+- Automatic table of contents generation
+- DOCX output support (with template customization)
+- Automatic artifact and release creation
 
-## 使い方
+## Usage
 
-### 基本（PDF・DOCX両方生成）
+### Basic (Generate both PDF and DOCX)
 
 ```yaml
 - uses: linkbal/md2pdf@v1
@@ -20,7 +20,7 @@ Markdown を PDF・DOCX に変換する GitHub Action です。
     input_dir: 'docs'
 ```
 
-### PDFのみ
+### PDF Only
 
 ```yaml
 - uses: linkbal/md2pdf@v1
@@ -29,7 +29,7 @@ Markdown を PDF・DOCX に変換する GitHub Action です。
     output_formats: 'pdf'
 ```
 
-### DOCXのみ
+### DOCX Only
 
 ```yaml
 - uses: linkbal/md2pdf@v1
@@ -38,7 +38,7 @@ Markdown を PDF・DOCX に変換する GitHub Action です。
     output_formats: 'docx'
 ```
 
-### DOCX テンプレート指定
+### With DOCX Template
 
 ```yaml
 - uses: linkbal/md2pdf@v1
@@ -48,7 +48,7 @@ Markdown を PDF・DOCX に変換する GitHub Action です。
     docx_template: 'templates/custom.docx'
 ```
 
-### リリース付き
+### With Release
 
 ```yaml
 - uses: linkbal/md2pdf@v1
@@ -56,31 +56,31 @@ Markdown を PDF・DOCX に変換する GitHub Action です。
     input_dir: 'docs'
     output_docx: true
     create_release: true
-    release_name_prefix: '提案書'
+    release_name_prefix: 'Proposal'
 ```
 
-## 入力パラメータ
+## Input Parameters
 
-| パラメータ | 説明 | デフォルト |
-|-----------|------|-----------|
-| `input_dir` | Markdownファイルのディレクトリ | `docs` |
-| `output_dir` | 出力ディレクトリ | `output` |
-| `output_formats` | 出力形式（カンマ区切り） | `pdf,docx` |
-| `docx_template` | DOCXテンプレートのパス | (なし) |
-| `upload_artifact` | アーティファクトをアップロードするか | `true` |
-| `artifact_name` | アーティファクト名 | `docs-output` |
-| `retention_days` | アーティファクトの保持日数 | `30` |
-| `create_release` | GitHub Releaseを作成するか | `false` |
-| `release_name_prefix` | リリース名のプレフィックス | `Release` |
-| `keep_releases` | 保持するリリース数（0で無制限） | `5` |
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `input_dir` | Directory containing Markdown files | `docs` |
+| `output_dir` | Output directory | `output` |
+| `output_formats` | Output formats (comma-separated) | `pdf,docx` |
+| `docx_template` | Path to DOCX template | (none) |
+| `upload_artifact` | Upload as artifact | `true` |
+| `artifact_name` | Artifact name | `docs-output` |
+| `retention_days` | Artifact retention days | `30` |
+| `create_release` | Create GitHub Release | `false` |
+| `release_name_prefix` | Release name prefix | `Release` |
+| `keep_releases` | Number of releases to keep (0 for unlimited) | `5` |
 
-## 出力
+## Outputs
 
-| 出力 | 説明 |
-|------|------|
-| `tag_name` | 作成されたタグ名（create_release=true時） |
+| Output | Description |
+|--------|-------------|
+| `tag_name` | Created tag name (when create_release=true) |
 
-## 完全な例
+## Complete Example
 
 ```yaml
 name: Generate Documents
@@ -106,24 +106,24 @@ jobs:
           output_docx: true
           docx_template: 'templates/style.docx'
           create_release: true
-          release_name_prefix: 'ドキュメント'
+          release_name_prefix: 'Documentation'
 ```
 
-## DOCXテンプレートの作成方法
+## Creating a DOCX Template
 
-1. Wordで新規文書を作成
-2. スタイル（見出し1、見出し2、本文など）を設定
-3. `.docx`として保存
-4. リポジトリに配置（例: `templates/style.docx`）
+1. Create a new document in Word
+2. Configure styles (Heading 1, Heading 2, Body text, etc.)
+3. Save as `.docx`
+4. Place in your repository (e.g., `templates/style.docx`)
 
-## ローカルでの実行
+## Local Execution
 
 ```bash
 git clone https://github.com/linkbal/md2pdf.git
 cd md2pdf
 docker build -t md2pdf ./scripts
 
-# PDFのみ
+# PDF only
 docker run --rm \
   -v /path/to/docs:/work/input:ro \
   -v /path/to/output:/work/output \
@@ -136,7 +136,7 @@ docker run --rm \
   -e OUTPUT_DOCX=true \
   md2pdf
 
-# テンプレート指定
+# With template
 docker run --rm \
   -v /path/to/docs:/work/input:ro \
   -v /path/to/output:/work/output \
@@ -146,11 +146,11 @@ docker run --rm \
   md2pdf
 ```
 
-### ローカル実行時のセキュリティ
+### Security Considerations for Local Execution
 
-Dockerコンテナはrootユーザーで実行されます。これはGitHub Actionsのワークスペースマウントとの互換性を確保するためです。
+The Docker container runs as root user. This is to ensure compatibility with GitHub Actions workspace mounts.
 
-セキュリティを強化したい場合は、`--user`フラグを使用して非rootユーザーで実行できます：
+For enhanced security, you can run as a non-root user using the `--user` flag:
 
 ```bash
 docker run --rm \
@@ -161,8 +161,8 @@ docker run --rm \
   md2pdf
 ```
 
-**注意**: 非rootユーザーで実行する場合、`--security-opt seccomp=unconfined`オプションが必要です（Chromiumサンドボックスの有効化のため）。
+**Note**: When running as a non-root user, the `--security-opt seccomp=unconfined` option is required to enable the Chromium sandbox.
 
-## ライセンス
+## License
 
 MIT
