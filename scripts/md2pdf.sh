@@ -193,7 +193,8 @@ for md_file in "${md_files[@]}"; do
     echo "Converting: $md_file"
 
     # Process Mermaid diagrams
-    temp_md_file="$TEMP_DIR/$(basename "$md_file")"
+    temp_md_file="$TEMP_DIR/$rel_path"
+    mkdir -p "$(dirname "$temp_md_file")"
     process_mermaid "$md_file" "$temp_md_file"
 
     # Header file path (for Docker or direct execution)
