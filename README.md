@@ -118,6 +118,16 @@ jobs:
 
 ## Local Execution
 
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OUTPUT_FORMATS` | Output formats (comma-separated: `pdf`, `docx`) | `pdf,docx` |
+| `DOCX_TEMPLATE` | Path to reference DOCX template | (none) |
+| `MMDC_PUPPETEER_CONFIG` | Path to Puppeteer config JSON for mermaid-cli | (built-in) |
+
+### Examples
+
 ```bash
 git clone https://github.com/linkbal/md2pdf.git
 cd md2pdf
@@ -127,13 +137,13 @@ docker build -t md2pdf ./scripts
 docker run --rm \
   -v /path/to/docs:/work/input:ro \
   -v /path/to/output:/work/output \
+  -e OUTPUT_FORMATS=pdf \
   md2pdf
 
 # PDF + DOCX
 docker run --rm \
   -v /path/to/docs:/work/input:ro \
   -v /path/to/output:/work/output \
-  -e OUTPUT_DOCX=true \
   md2pdf
 
 # With template
@@ -141,8 +151,15 @@ docker run --rm \
   -v /path/to/docs:/work/input:ro \
   -v /path/to/output:/work/output \
   -v /path/to/template.docx:/work/template.docx:ro \
-  -e OUTPUT_DOCX=true \
   -e DOCX_TEMPLATE=/work/template.docx \
+  md2pdf
+
+# With custom Puppeteer config for Mermaid
+docker run --rm \
+  -v /path/to/docs:/work/input:ro \
+  -v /path/to/output:/work/output \
+  -v /path/to/puppeteer-config.json:/work/puppeteer-config.json:ro \
+  -e MMDC_PUPPETEER_CONFIG=/work/puppeteer-config.json \
   md2pdf
 ```
 
