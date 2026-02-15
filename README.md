@@ -184,7 +184,7 @@ docker run --rm \
 ```
 
 **Note**: When running as a non-root user:
-- `--security-opt seccomp=unconfined` is required to enable the Chromium sandbox
+- `--security-opt seccomp=unconfined` is **required** because Chromium's sandbox uses unprivileged user namespaces, which are restricted by Docker's default seccomp profile. Without this option, you will get "No usable sandbox!" error.
 - Override `MMDC_PUPPETEER_CONFIG` with a config that removes `--no-sandbox` flags
 
 ## License
