@@ -101,6 +101,7 @@ jobs:
       - uses: linkbal/md2pdf@v1
         with:
           input_dir: 'docs'
+          output_formats: 'pdf,docx'
           docx_template: 'templates/style.docx'
           create_release: true
           release_name_prefix: 'Documentation'
