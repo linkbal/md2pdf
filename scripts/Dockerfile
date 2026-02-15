@@ -26,8 +26,8 @@ RUN npm install -g @mermaid-js/mermaid-cli
 RUN mkdir -p /root/.config/puppeteer && \
     echo '{"executablePath": "/usr/bin/chromium"}' > /root/.config/puppeteer/config.json
 
-# Puppeteer config for mmdc (mermaid-cli) with no-sandbox for root execution
-RUN echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > /usr/local/share/puppeteer-config.json
+# Puppeteer config for mmdc (mermaid-cli)
+RUN echo '{"args": []}' > /usr/local/share/puppeteer-config.json
 
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
@@ -40,6 +40,9 @@ WORKDIR /work
 COPY md2pdf.sh /usr/local/bin/md2pdf.sh
 COPY header.tex /usr/local/share/pandoc/header.tex
 RUN chmod +x /usr/local/bin/md2pdf.sh
+
+# Run as non-root user for security (enables Chromium sandbox)
+USER 1000:1000
 
 ENTRYPOINT ["/usr/local/bin/md2pdf.sh"]
 CMD ["/work/input", "/work/output"]
