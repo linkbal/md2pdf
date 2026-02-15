@@ -61,6 +61,9 @@ else
     MERMAID_AVAILABLE=true
 fi
 
+# Puppeteer設定ファイル（Docker環境用）
+PUPPETEER_CONFIG=${MMDC_PUPPETEER_CONFIG:-""}
+
 # Markdownファイルを検索して配列に格納
 mapfile -t md_files < <(find "$INPUT_DIR" -name "*.md" -not -path "*/node_modules/*" -not -path "*/.git/*")
 
@@ -115,16 +118,23 @@ process_mermaid() {
             # mermaidを画像に変換（Dev Container環境対応）
             local error_output
             local conversion_success
+            local mmdc_opts="-i $mermaid_file -o $png_file -t neutral -b white --width 800 --height 600"
+
+            # Puppeteer設定ファイルがある場合は追加
+            if [ -n "$PUPPETEER_CONFIG" ] && [ -f "$PUPPETEER_CONFIG" ]; then
+                mmdc_opts="$mmdc_opts -p $PUPPETEER_CONFIG"
+            fi
+
             if command -v xvfb-run &> /dev/null; then
                 # Dev Container環境ではxvfb-runを使用
-                if error_output=$(xvfb-run -a mmdc -i "$mermaid_file" -o "$png_file" -t neutral -b white --width 800 --height 600 2>&1); then
+                if error_output=$(xvfb-run -a mmdc $mmdc_opts 2>&1); then
                     conversion_success=true
                 else
                     conversion_success=false
                 fi
             else
                 # 通常環境
-                if error_output=$(mmdc -i "$mermaid_file" -o "$png_file" -t neutral -b white --width 800 --height 600 2>&1); then
+                if error_output=$(mmdc $mmdc_opts 2>&1); then
                     conversion_success=true
                 else
                     conversion_success=false

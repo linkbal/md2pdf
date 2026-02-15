@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-cjk \
     fonts-liberation \
     xvfb \
+    xauth \
     chromium \
     && rm -rf /var/lib/apt/lists/*
 
@@ -25,8 +26,12 @@ RUN npm install -g @mermaid-js/mermaid-cli
 RUN mkdir -p /root/.config/puppeteer && \
     echo '{"executablePath": "/usr/bin/chromium"}' > /root/.config/puppeteer/config.json
 
+# Puppeteer config for mmdc (mermaid-cli) with no-sandbox for root execution
+RUN echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > /usr/local/share/puppeteer-config.json
+
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV MMDC_PUPPETEER_CONFIG=/usr/local/share/puppeteer-config.json
 
 # Create work directory
 WORKDIR /work
