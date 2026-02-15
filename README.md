@@ -165,7 +165,7 @@ docker run --rm \
 
 ### Security Considerations for Local Execution
 
-The Docker container runs as root user with `--no-sandbox` flag for Chromium. This is to ensure compatibility with GitHub Actions workspace mounts.
+The Docker container runs as root user with `--no-sandbox` flag for Chromium. This is to ensure compatibility with GitHub Actions workspace mounts, but be aware that `--no-sandbox` disables Chromium's sandbox security layer, which normally isolates rendering processes and limits their access to the container's filesystem and other resources. Running with `--no-sandbox` therefore increases the potential impact if malicious or compromised content is rendered.
 
 For enhanced security, you can run as a non-root user with Chromium sandbox enabled:
 
