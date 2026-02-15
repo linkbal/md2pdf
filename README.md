@@ -168,7 +168,7 @@ For enhanced security, you can run as a non-root user with Chromium sandbox enab
 
 ```bash
 # Create a Puppeteer config without --no-sandbox
-echo '{"executablePath": "/usr/bin/chromium", "args": []}' > /tmp/puppeteer-config.json
+echo '{"executablePath": "/usr/bin/chromium"}' > /tmp/puppeteer-config.json
 
 docker run --rm \
   --user $(id -u):$(id -g) \
