@@ -41,8 +41,8 @@ COPY md2pdf.sh /usr/local/bin/md2pdf.sh
 COPY header.tex /usr/local/share/pandoc/header.tex
 RUN chmod +x /usr/local/bin/md2pdf.sh
 
-# Run as non-root user for security (enables Chromium sandbox)
-USER 1000:1000
+# NOTE: Run as root to ensure compatibility with GitHub Actions workspace mounts.
+# The previous 'USER 1000:1000' caused permission issues with /work/output.
 
 ENTRYPOINT ["/usr/local/bin/md2pdf.sh"]
 CMD ["/work/input", "/work/output"]
