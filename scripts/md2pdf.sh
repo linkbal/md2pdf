@@ -166,6 +166,11 @@ process_mermaid() {
         fi
     done < "$input_file"
 
+    # If the file ended while still inside a Mermaid block,
+    # append the remaining Mermaid content so no input is lost.
+    if [ "$in_mermaid" = true ] && [ -n "$mermaid_content" ]; then
+        output_content+="$mermaid_content"
+    fi
     # Write processed content to temporary file
     printf "%s" "$output_content" > "$temp_file"
 }
