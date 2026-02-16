@@ -145,7 +145,7 @@ process_mermaid() {
             mmdc_opts+=(-p "$PUPPETEER_CONFIG")
         fi
 
-        # Run mmdc directly - Puppeteer config enables headless mode with --no-sandbox
+        # Run mmdc directly (headless by default); Puppeteer config mainly sets Chromium args (e.g. --no-sandbox) and paths
         if error_output=$(mmdc "${mmdc_opts[@]}" 2>&1); then
             conversion_success=true
         else
