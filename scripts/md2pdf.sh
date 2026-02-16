@@ -145,20 +145,11 @@ process_mermaid() {
             mmdc_opts+=(-p "$PUPPETEER_CONFIG")
         fi
 
-        if command -v xvfb-run &> /dev/null; then
-            # Use xvfb-run in headless environment
-            if error_output=$(xvfb-run -a mmdc "${mmdc_opts[@]}" 2>&1); then
-                conversion_success=true
-            else
-                conversion_success=false
-            fi
+        # Run mmdc directly - Puppeteer config enables headless mode with --no-sandbox
+        if error_output=$(mmdc "${mmdc_opts[@]}" 2>&1); then
+            conversion_success=true
         else
-            # Normal environment
-            if error_output=$(mmdc "${mmdc_opts[@]}" 2>&1); then
-                conversion_success=true
-            else
-                conversion_success=false
-            fi
+            conversion_success=false
         fi
 
         if [ "$conversion_success" = true ]; then
