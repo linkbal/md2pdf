@@ -169,8 +169,8 @@ process_mermaid() {
             echo "Error: Failed to convert Mermaid diagram $i"
             echo "Details: $error_output"
             # Restore original mermaid block
-            local mermaid_content
-            mermaid_content=$(cat "$mermaid_file")
+            # Restore original mermaid block
+            # Create a temp file with the replacement
             # Create a temp file with the replacement
             local replacement_file="$TEMP_DIR/replacement_${i}.txt"
             {
