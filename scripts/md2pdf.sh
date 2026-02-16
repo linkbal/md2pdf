@@ -97,82 +97,100 @@ process_mermaid() {
         return
     fi
 
-    # Find and convert Mermaid code blocks to images
+    # Use awk to extract and replace Mermaid blocks
+    # This approach preserves newlines correctly
     local mermaid_counter=0
-    local in_mermaid=false
-    local mermaid_content=""
-    local output_content=""
+    local intermediate_file="$TEMP_DIR/intermediate.md"
 
-    while IFS= read -r line; do
-        if [[ "$line" =~ ^\`\`\`mermaid ]]; then
-            in_mermaid=true
-            mermaid_content=""
-            continue
-        elif [[ "$line" =~ ^\`\`\`$ ]] && [ "$in_mermaid" = true ]; then
-            # End of Mermaid code block
-            in_mermaid=false
-            ((++mermaid_counter))
+    # First pass: extract mermaid blocks to separate files and mark positions
+    awk -v temp_dir="$TEMP_DIR" '
+    BEGIN { in_mermaid = 0; counter = 0; mermaid_file = "" }
+    /^```mermaid/ {
+        in_mermaid = 1
+        counter++
+        mermaid_file = temp_dir "/mermaid_" counter ".mmd"
+        print "MERMAID_PLACEHOLDER_" counter
+        next
+    }
+    /^```$/ && in_mermaid {
+        in_mermaid = 0
+        close(mermaid_file)
+        next
+    }
+    in_mermaid {
+        print >> mermaid_file
+        next
+    }
+    { print }
+    ' "$input_file" > "$intermediate_file"
 
-            # Create temporary mermaid file
-            local mermaid_file="$TEMP_DIR/mermaid_${mermaid_counter}.mmd"
-            local png_file="$TEMP_DIR/mermaid_${mermaid_counter}.png"
+    # Count mermaid blocks
+    mermaid_counter=$(ls "$TEMP_DIR"/mermaid_*.mmd 2>/dev/null | wc -l)
 
-            echo "$mermaid_content" > "$mermaid_file"
+    # Convert each mermaid file to PNG
+    for i in $(seq 1 "$mermaid_counter"); do
+        local mermaid_file="$TEMP_DIR/mermaid_${i}.mmd"
+        local png_file="$TEMP_DIR/mermaid_${i}.png"
 
-            # Convert mermaid to image (with headless/Docker environment support)
-            local error_output
-            local conversion_success
-            local -a mmdc_opts=(-i "$mermaid_file" -o "$png_file" -t neutral -b white --width 800 --height 600)
-
-            # Add Puppeteer config file if available
-            if [ -n "$PUPPETEER_CONFIG" ] && [ -f "$PUPPETEER_CONFIG" ]; then
-                mmdc_opts+=(-p "$PUPPETEER_CONFIG")
-            fi
-
-            if command -v xvfb-run &> /dev/null; then
-                # Use xvfb-run in headless environment
-                if error_output=$(xvfb-run -a mmdc "${mmdc_opts[@]}" 2>&1); then
-                    conversion_success=true
-                else
-                    conversion_success=false
-                fi
-            else
-                # Normal environment
-                if error_output=$(mmdc "${mmdc_opts[@]}" 2>&1); then
-                    conversion_success=true
-                else
-                    conversion_success=false
-                fi
-            fi
-
-            if [ "$conversion_success" = true ]; then
-                # On success, replace with image reference
-                output_content+="![Mermaid Diagram]($png_file)"$'\n'
-            else
-                # On failure, output error details and keep original code block
-                echo "Error: Failed to convert Mermaid diagram $mermaid_counter"
-                echo "Details: $error_output"
-                output_content+='```mermaid'$'\n'
-                output_content+="$mermaid_content"
-                output_content+='```'$'\n'
-            fi
+        if [ ! -f "$mermaid_file" ]; then
             continue
         fi
 
-        if [ "$in_mermaid" = true ]; then
-            mermaid_content+="$line"$'\n'
+        local error_output
+        local conversion_success
+        local -a mmdc_opts=(-i "$mermaid_file" -o "$png_file" -t neutral -b white --width 1200 --height 800)
+
+        # Add Puppeteer config file if available
+        if [ -n "$PUPPETEER_CONFIG" ] && [ -f "$PUPPETEER_CONFIG" ]; then
+            mmdc_opts+=(-p "$PUPPETEER_CONFIG")
+        fi
+
+        if command -v xvfb-run &> /dev/null; then
+            # Use xvfb-run in headless environment
+            if error_output=$(xvfb-run -a mmdc "${mmdc_opts[@]}" 2>&1); then
+                conversion_success=true
+            else
+                conversion_success=false
+            fi
         else
-            output_content+="$line"$'\n'
+            # Normal environment
+            if error_output=$(mmdc "${mmdc_opts[@]}" 2>&1); then
+                conversion_success=true
+            else
+                conversion_success=false
+            fi
         fi
-    done < "$input_file"
 
-    # If the file ended while still inside a Mermaid block,
-    # append the remaining Mermaid content so no input is lost.
-    if [ "$in_mermaid" = true ] && [ -n "$mermaid_content" ]; then
-        output_content+="$mermaid_content"
-    fi
-    # Write processed content to temporary file
-    printf "%s" "$output_content" > "$temp_file"
+        if [ "$conversion_success" = true ]; then
+            # Replace placeholder with image reference
+            sed -i "s|MERMAID_PLACEHOLDER_${i}|![Mermaid Diagram](${png_file})|" "$intermediate_file"
+        else
+            # On failure, output error details and restore original code block
+            echo "Error: Failed to convert Mermaid diagram $i"
+            echo "Details: $error_output"
+            # Restore original mermaid block
+            local mermaid_content
+            mermaid_content=$(cat "$mermaid_file")
+            # Create a temp file with the replacement
+            local replacement_file="$TEMP_DIR/replacement_${i}.txt"
+            {
+                echo '```mermaid'
+                cat "$mermaid_file"
+                echo '```'
+            } > "$replacement_file"
+            # Use awk for multi-line replacement
+            awk -v placeholder="MERMAID_PLACEHOLDER_${i}" -v replacement_file="$replacement_file" '
+            $0 == placeholder {
+                while ((getline line < replacement_file) > 0) print line
+                close(replacement_file)
+                next
+            }
+            { print }
+            ' "$intermediate_file" > "$intermediate_file.tmp" && mv "$intermediate_file.tmp" "$intermediate_file"
+        fi
+    done
+
+    mv "$intermediate_file" "$temp_file"
 }
 
 # Process each Markdown file
