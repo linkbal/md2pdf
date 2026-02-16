@@ -1,13 +1,14 @@
 #!/bin/bash
 
-# Markdown to PDF・DOCX Conversion Script with Mermaid Support
+# Markdown to PDF/DOCX Conversion Script with Mermaid Support
 # Usage: ./md2pdf.sh [input_dir] [output_dir]
 # Example: ./md2pdf.sh ./proposal ./pdf
 # Example: ./md2pdf.sh (converts all .md files from . directory to ./pdf)
 #
 # Environment variables:
-#   OUTPUT_FORMATS=pdf,docx  - Output formats (comma-separated)
-#   DOCX_TEMPLATE=/path      - Path to reference DOCX template
+#   OUTPUT_FORMATS=pdf,docx       - Output formats (comma-separated)
+#   DOCX_TEMPLATE=/path           - Path to reference DOCX template
+#   MMDC_PUPPETEER_CONFIG=/path   - Path to Puppeteer config JSON for mermaid-cli (mmdc)
 #
 # Requirements:
 # - pandoc
@@ -17,7 +18,7 @@
 
 set -e
 
-# 入力ディレクトリと出力ディレクトリを設定
+# Set input and output directories
 if [ $# -eq 0 ]; then
   INPUT_DIR="."
 else
@@ -25,11 +26,11 @@ else
 fi
 OUTPUT_DIR=${2:-"./pdf"}
 
-# 環境変数からオプションを取得
+# Get options from environment variables
 OUTPUT_FORMATS=${OUTPUT_FORMATS:-"pdf,docx"}
 DOCX_TEMPLATE=${DOCX_TEMPLATE:-""}
 
-# 出力形式を判定
+# Determine output formats
 OUTPUT_PDF=false
 OUTPUT_DOCX=false
 if [[ "$OUTPUT_FORMATS" == *"pdf"* ]]; then
@@ -39,48 +40,54 @@ if [[ "$OUTPUT_FORMATS" == *"docx"* ]]; then
     OUTPUT_DOCX=true
 fi
 
-# パスの末尾のスラッシュを削除
+# Remove trailing slash from path
 INPUT_DIR=${INPUT_DIR%/}
 
-# 出力ディレクトリがなければ作成
+# Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
-# 一時ディレクトリを作成（mermaid画像用）
+# Create temporary directory for mermaid images
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
-# mermaid-cliがインストールされているかチェック
+# Check if mermaid-cli is installed
 if ! command -v mmdc &> /dev/null; then
-    echo "警告: mermaid-cli (mmdc) がインストールされていません。"
-    echo "Mermaidダイアグラムを使用する場合は、以下のコマンドでインストールしてください:"
+    echo "Warning: mermaid-cli (mmdc) is not installed."
+    echo "To use Mermaid diagrams, install it with:"
     echo "npm install -g @mermaid-js/mermaid-cli"
     echo ""
-    echo "Mermaidダイアグラムなしで処理を続行します..."
+    echo "Continuing without Mermaid diagram support..."
     MERMAID_AVAILABLE=false
 else
     MERMAID_AVAILABLE=true
 fi
 
-# Markdownファイルを検索して配列に格納
+# Puppeteer config file (for Docker environment)
+PUPPETEER_CONFIG=${MMDC_PUPPETEER_CONFIG:-""}
+if [ -n "$PUPPETEER_CONFIG" ] && [ ! -f "$PUPPETEER_CONFIG" ]; then
+    echo "Warning: MMDC_PUPPETEER_CONFIG is set but file does not exist: $PUPPETEER_CONFIG"
+fi
+
+# Find Markdown files and store in array
 mapfile -t md_files < <(find "$INPUT_DIR" -name "*.md" -not -path "*/node_modules/*" -not -path "*/.git/*")
 
-# 処理したファイル数をカウント
+# Count processed files
 count=0
 success_count=0
 
 echo "========================================"
-echo "Markdown to PDF・DOCX Converter"
+echo "Markdown to PDF/DOCX Converter"
 echo "========================================"
-echo "入力ディレクトリ: $INPUT_DIR"
-echo "出力ディレクトリ: $OUTPUT_DIR"
-echo "処理するファイル数: ${#md_files[@]}"
-echo "出力形式: $OUTPUT_FORMATS"
+echo "Input directory: $INPUT_DIR"
+echo "Output directory: $OUTPUT_DIR"
+echo "Files to process: ${#md_files[@]}"
+echo "Output formats: $OUTPUT_FORMATS"
 if [ -n "$DOCX_TEMPLATE" ]; then
-    echo "DOCXテンプレート: $DOCX_TEMPLATE"
+    echo "DOCX template: $DOCX_TEMPLATE"
 fi
 echo "========================================"
 
-# Mermaidダイアグラムを画像に変換する関数
+# Function to convert Mermaid diagrams to images
 process_mermaid() {
     local input_file="$1"
     local temp_file="$2"
@@ -90,7 +97,7 @@ process_mermaid() {
         return
     fi
 
-    # Mermaidコードブロックを検索して画像に変換
+    # Find and convert Mermaid code blocks to images
     local mermaid_counter=0
     local in_mermaid=false
     local mermaid_content=""
@@ -102,29 +109,36 @@ process_mermaid() {
             mermaid_content=""
             continue
         elif [[ "$line" =~ ^\`\`\`$ ]] && [ "$in_mermaid" = true ]; then
-            # Mermaidコードブロックの終了
+            # End of Mermaid code block
             in_mermaid=false
             ((++mermaid_counter))
 
-            # 一時的なmermaidファイルを作成
+            # Create temporary mermaid file
             local mermaid_file="$TEMP_DIR/mermaid_${mermaid_counter}.mmd"
             local png_file="$TEMP_DIR/mermaid_${mermaid_counter}.png"
 
             echo "$mermaid_content" > "$mermaid_file"
 
-            # mermaidを画像に変換（Dev Container環境対応）
+            # Convert mermaid to image (with headless/Docker environment support)
             local error_output
             local conversion_success
+            local -a mmdc_opts=(-i "$mermaid_file" -o "$png_file" -t neutral -b white --width 800 --height 600)
+
+            # Add Puppeteer config file if available
+            if [ -n "$PUPPETEER_CONFIG" ] && [ -f "$PUPPETEER_CONFIG" ]; then
+                mmdc_opts+=(-p "$PUPPETEER_CONFIG")
+            fi
+
             if command -v xvfb-run &> /dev/null; then
-                # Dev Container環境ではxvfb-runを使用
-                if error_output=$(xvfb-run -a mmdc -i "$mermaid_file" -o "$png_file" -t neutral -b white --width 800 --height 600 2>&1); then
+                # Use xvfb-run in headless environment
+                if error_output=$(xvfb-run -a mmdc "${mmdc_opts[@]}" 2>&1); then
                     conversion_success=true
                 else
                     conversion_success=false
                 fi
             else
-                # 通常環境
-                if error_output=$(mmdc -i "$mermaid_file" -o "$png_file" -t neutral -b white --width 800 --height 600 2>&1); then
+                # Normal environment
+                if error_output=$(mmdc "${mmdc_opts[@]}" 2>&1); then
                     conversion_success=true
                 else
                     conversion_success=false
@@ -132,12 +146,12 @@ process_mermaid() {
             fi
 
             if [ "$conversion_success" = true ]; then
-                # 成功した場合、画像参照に置き換え
+                # On success, replace with image reference
                 output_content+="![Mermaid Diagram]($png_file)"$'\n'
             else
-                # 失敗した場合、エラー詳細を出力して元のコードブロックを保持
-                echo "エラー: Mermaidダイアグラム $mermaid_counter の変換に失敗しました"
-                echo "詳細エラー: $error_output"
+                # On failure, output error details and keep original code block
+                echo "Error: Failed to convert Mermaid diagram $mermaid_counter"
+                echo "Details: $error_output"
                 output_content+='```mermaid'$'\n'
                 output_content+="$mermaid_content"
                 output_content+='```'$'\n'
@@ -152,13 +166,18 @@ process_mermaid() {
         fi
     done < "$input_file"
 
-    # 処理済みの内容を一時ファイルに書き込み
+    # If the file ended while still inside a Mermaid block,
+    # append the remaining Mermaid content so no input is lost.
+    if [ "$in_mermaid" = true ] && [ -n "$mermaid_content" ]; then
+        output_content+="$mermaid_content"
+    fi
+    # Write processed content to temporary file
     printf "%s" "$output_content" > "$temp_file"
 }
 
-# 各Markdownファイルを処理
+# Process each Markdown file
 for md_file in "${md_files[@]}"; do
-    # 相対パスを計算
+    # Calculate relative path
     if [ "$INPUT_DIR" = "." ]; then
         rel_path="$md_file"
     else
@@ -167,22 +186,23 @@ for md_file in "${md_files[@]}"; do
 
     dir_path=$(dirname "$rel_path")
 
-    # 出力ディレクトリを作成
+    # Create output directory
     output_dir_path="$OUTPUT_DIR/$dir_path"
     mkdir -p "$output_dir_path"
 
-    # 出力ファイルパスを決定
+    # Determine output file paths
     pdf_file="$OUTPUT_DIR/${rel_path%.md}.pdf"
     docx_file="$OUTPUT_DIR/${rel_path%.md}.docx"
 
     echo ""
-    echo "変換中: $md_file"
+    echo "Converting: $md_file"
 
-    # Mermaidダイアグラムを処理
-    temp_md_file="$TEMP_DIR/$(basename "$md_file")"
+    # Process Mermaid diagrams
+    temp_md_file="$TEMP_DIR/$rel_path"
+    mkdir -p "$(dirname "$temp_md_file")"
     process_mermaid "$md_file" "$temp_md_file"
 
-    # ヘッダーファイルのパス（Docker内または直接実行用）
+    # Header file path (for Docker or direct execution)
     HEADER_FILE="/usr/local/share/pandoc/header.tex"
     if [ ! -f "$HEADER_FILE" ]; then
         HEADER_FILE="$(dirname "$0")/header.tex"
@@ -190,7 +210,7 @@ for md_file in "${md_files[@]}"; do
 
     local_success=true
 
-    # PDF変換
+    # PDF conversion
     if [ "$OUTPUT_PDF" = "true" ]; then
         echo "  -> PDF: $pdf_file"
         if pandoc "$temp_md_file" \
@@ -214,18 +234,18 @@ for md_file in "${md_files[@]}"; do
             -V "toccolor=black" \
             -H "$HEADER_FILE" \
             -V "block-headings=true"; then
-            echo "     成功"
+            echo "     Success"
         else
-            echo "     失敗"
+            echo "     Failed"
             local_success=false
         fi
     fi
 
-    # DOCX変換
+    # DOCX conversion
     if [ "$OUTPUT_DOCX" = "true" ]; then
         echo "  -> DOCX: $docx_file"
 
-        # テンプレートオプションを構築
+        # Build template options
         docx_opts=()
         if [ -n "$DOCX_TEMPLATE" ] && [ -f "$DOCX_TEMPLATE" ]; then
             docx_opts+=("--reference-doc=$DOCX_TEMPLATE")
@@ -237,9 +257,9 @@ for md_file in "${md_files[@]}"; do
             --toc \
             --toc-depth=3 \
             "${docx_opts[@]}"; then
-            echo "     成功"
+            echo "     Success"
         else
-            echo "     失敗"
+            echo "     Failed"
             local_success=false
         fi
     fi
@@ -252,8 +272,8 @@ done
 
 echo ""
 echo "========================================"
-echo "変換完了"
-echo "処理ファイル数: $count"
-echo "成功: $success_count"
-echo "失敗: $((count - success_count))"
+echo "Conversion complete"
+echo "Files processed: $count"
+echo "Succeeded: $success_count"
+echo "Failed: $((count - success_count))"
 echo "========================================"
