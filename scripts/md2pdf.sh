@@ -29,6 +29,7 @@ OUTPUT_DIR=${2:-"./pdf"}
 # Get options from environment variables
 OUTPUT_FORMATS=${OUTPUT_FORMATS:-"pdf,docx"}
 DOCX_TEMPLATE=${DOCX_TEMPLATE:-""}
+HEADER_TEX=${HEADER_TEX:-""}
 
 # Determine output formats
 OUTPUT_PDF=false
@@ -84,6 +85,9 @@ echo "Files to process: ${#md_files[@]}"
 echo "Output formats: $OUTPUT_FORMATS"
 if [ -n "$DOCX_TEMPLATE" ]; then
     echo "DOCX template: $DOCX_TEMPLATE"
+fi
+if [ -n "$HEADER_TEX" ]; then
+    echo "Custom header: $HEADER_TEX"
 fi
 echo "========================================"
 
@@ -211,9 +215,12 @@ for md_file in "${md_files[@]}"; do
     mkdir -p "$(dirname "$temp_md_file")"
     process_mermaid "$md_file" "$temp_md_file"
 
-    # Header file path (for Docker or direct execution)
-    HEADER_FILE="/usr/local/share/pandoc/header.tex"
-    if [ ! -f "$HEADER_FILE" ]; then
+    # Header file path (custom > Docker default > script directory)
+    if [ -n "$HEADER_TEX" ] && [ -f "$HEADER_TEX" ]; then
+        HEADER_FILE="$HEADER_TEX"
+    elif [ -f "/usr/local/share/pandoc/header.tex" ]; then
+        HEADER_FILE="/usr/local/share/pandoc/header.tex"
+    else
         HEADER_FILE="$(dirname "$0")/header.tex"
     fi
 

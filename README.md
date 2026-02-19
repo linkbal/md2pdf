@@ -48,6 +48,16 @@ A GitHub Action that converts Markdown to PDF and DOCX.
     docx_template: 'templates/custom.docx'
 ```
 
+### With Custom LaTeX Header
+
+```yaml
+- uses: linkbal/md2pdf@v1
+  with:
+    input_dir: 'docs'
+    output_formats: 'pdf'
+    header_tex: 'templates/header.tex'
+```
+
 ### With Release
 
 ```yaml
@@ -67,6 +77,7 @@ A GitHub Action that converts Markdown to PDF and DOCX.
 | `output_dir` | Output directory | `output` |
 | `output_formats` | Output formats (comma-separated) | `pdf,docx` |
 | `docx_template` | Path to DOCX template | (none) |
+| `header_tex` | Path to custom LaTeX header file | (none) |
 | `upload_artifact` | Upload as artifact | `true` |
 | `artifact_name` | Artifact name | `docs-output` |
 | `retention_days` | Artifact retention days | `30` |
@@ -124,6 +135,7 @@ jobs:
 |----------|-------------|---------|
 | `OUTPUT_FORMATS` | Output formats (comma-separated: `pdf`, `docx`) | `pdf,docx` |
 | `DOCX_TEMPLATE` | Path to reference DOCX template | (none) |
+| `HEADER_TEX` | Path to custom LaTeX header file | (none) |
 | `MMDC_PUPPETEER_CONFIG` | Path to Puppeteer config JSON for mermaid-cli | (none in local execution, `/usr/local/share/puppeteer-config.json` in Docker) |
 
 ### Examples
@@ -146,12 +158,20 @@ docker run --rm \
   -v /path/to/output:/work/output \
   md2pdf
 
-# With template
+# With DOCX template
 docker run --rm \
   -v /path/to/docs:/work/input:ro \
   -v /path/to/output:/work/output \
   -v /path/to/template.docx:/work/template.docx:ro \
   -e DOCX_TEMPLATE=/work/template.docx \
+  md2pdf
+
+# With custom LaTeX header
+docker run --rm \
+  -v /path/to/docs:/work/input:ro \
+  -v /path/to/output:/work/output \
+  -v /path/to/header.tex:/work/header.tex:ro \
+  -e HEADER_TEX=/work/header.tex \
   md2pdf
 
 # With custom Puppeteer config for Mermaid
