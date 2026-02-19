@@ -23,6 +23,10 @@ inputs:
     description: 'DOCXテンプレートファイルのパス（リポジトリからの相対パス）'
     required: false
     default: ''
+  header_tex:
+    description: 'カスタムLaTeXヘッダーファイルのパス（リポジトリからの相対パス）'
+    required: false
+    default: ''
   upload_artifact:
     description: 'アーティファクトをアップロードするか'
     required: false
@@ -66,6 +70,7 @@ runs:
       env:
         OUTPUT_FORMATS: ${{ inputs.output_formats }}
         DOCX_TEMPLATE_INPUT: ${{ inputs.docx_template }}
+        HEADER_TEX_INPUT: ${{ inputs.header_tex }}
       run: |
         mkdir -p ${{ inputs.output_dir }}
 
@@ -77,11 +82,20 @@ runs:
           TEMPLATE_ENV="-e DOCX_TEMPLATE=/work/template.docx"
         fi
 
+        # カスタムヘッダーマウントオプションを構築
+        HEADER_MOUNT=""
+        HEADER_ENV=""
+        if [ -n "$HEADER_TEX_INPUT" ] && [ -f "${{ github.workspace }}/$HEADER_TEX_INPUT" ]; then
+          HEADER_MOUNT="-v ${{ github.workspace }}/$HEADER_TEX_INPUT:/work/header.tex:ro"
+          HEADER_ENV="-e HEADER_TEX=/work/header.tex"
+        fi
+
         docker run --rm \
           -v ${{ github.workspace }}/${{ inputs.input_dir }}:/work/input:ro \
           -v ${{ github.workspace }}/${{ inputs.output_dir }}:/work/output \
           -e OUTPUT_FORMATS="$OUTPUT_FORMATS" \
           $TEMPLATE_MOUNT $TEMPLATE_ENV \
+          $HEADER_MOUNT $HEADER_ENV \
           md2pdf /work/input /work/output
 
     - name: 生成されたファイルを確認
