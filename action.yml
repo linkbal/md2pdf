@@ -71,7 +71,7 @@ runs:
     - name: Dockerイメージをビルド
       shell: bash
       run: |
-        docker build -t md2pdf ${{ github.action_path }}/scripts
+        DOCKER_BUILDKIT=1 docker build -t md2pdf ${{ github.action_path }}/scripts
 
     - name: PDF・DOCXを生成
       shell: bash
