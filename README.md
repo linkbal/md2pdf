@@ -69,6 +69,21 @@ A GitHub Action that converts Markdown to PDF and DOCX.
     release_name_prefix: 'Proposal'
 ```
 
+### With Release (ZIP archive)
+
+When you have multiple files in nested directories, use `release_as_zip` to bundle them into a single ZIP archive:
+
+```yaml
+- uses: linkbal/md2pdf@v1
+  with:
+    input_dir: 'docs'
+    output_formats: 'pdf'
+    create_release: true
+    release_name_prefix: 'Documents'
+    release_as_zip: true
+    zip_name: 'my-documents'
+```
+
 ## Input Parameters
 
 | Parameter | Description | Default |
@@ -84,6 +99,8 @@ A GitHub Action that converts Markdown to PDF and DOCX.
 | `create_release` | Create GitHub Release | `false` |
 | `release_name_prefix` | Release name prefix | `Release` |
 | `keep_releases` | Number of releases to keep (0 for unlimited) | `5` |
+| `release_as_zip` | Bundle files into a ZIP archive for release | `false` |
+| `zip_name` | ZIP file name (without extension) | `documents` |
 
 ## Outputs
 
