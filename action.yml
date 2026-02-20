@@ -126,10 +126,12 @@ runs:
       if: inputs.create_release == 'true' && inputs.release_as_zip == 'true'
       shell: bash
       run: |
+        echo "Contents of ${{ inputs.output_dir }}:"
+        find ${{ inputs.output_dir }} -type f -ls
         cd ${{ inputs.output_dir }}
-        zip -r ../${{ inputs.zip_name }}.zip .
+        zip -rv ../${{ inputs.zip_name }}.zip .
         echo "Created ZIP archive: ${{ inputs.zip_name }}.zip"
-        ls -la ../${{ inputs.zip_name }}.zip
+        unzip -l ../${{ inputs.zip_name }}.zip
 
     - name: タグを作成
       if: inputs.create_release == 'true'
