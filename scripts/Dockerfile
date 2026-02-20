@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Markdown to PDF Converter with Mermaid Support
 FROM node:20-bookworm
 
