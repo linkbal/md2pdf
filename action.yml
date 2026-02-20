@@ -51,6 +51,14 @@ inputs:
     description: '保持するリリース数（0で無制限）'
     required: false
     default: '5'
+  release_as_zip:
+    description: 'リリース時にZIPアーカイブにまとめるか'
+    required: false
+    default: 'false'
+  zip_name:
+    description: 'ZIPファイル名（拡張子なし）'
+    required: false
+    default: 'documents'
 
 outputs:
   tag_name:
@@ -114,6 +122,15 @@ runs:
           ${{ inputs.output_dir }}/**/*.docx
         retention-days: ${{ inputs.retention_days }}
 
+    - name: ZIPアーカイブを作成
+      if: inputs.create_release == 'true' && inputs.release_as_zip == 'true'
+      shell: bash
+      run: |
+        cd ${{ inputs.output_dir }}
+        zip -r ../${{ inputs.zip_name }}.zip .
+        echo "Created ZIP archive: ${{ inputs.zip_name }}.zip"
+        ls -la ../${{ inputs.zip_name }}.zip
+
     - name: タグを作成
       if: inputs.create_release == 'true'
       id: tag
@@ -127,8 +144,17 @@ runs:
           git tag "$TAG" && git push origin "$TAG"
         fi
 
-    - name: リリースを作成
-      if: inputs.create_release == 'true'
+    - name: リリースを作成（ZIP）
+      if: inputs.create_release == 'true' && inputs.release_as_zip == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.tag.outputs.name }}
+        name: ${{ inputs.release_name_prefix }} ${{ steps.tag.outputs.name }}
+        files: ${{ inputs.zip_name }}.zip
+        generate_release_notes: true
+
+    - name: リリースを作成（個別ファイル）
+      if: inputs.create_release == 'true' && inputs.release_as_zip != 'true'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.tag.outputs.name }}
