@@ -69,8 +69,19 @@ if [ -n "$PUPPETEER_CONFIG" ] && [ ! -f "$PUPPETEER_CONFIG" ]; then
     echo "Warning: MMDC_PUPPETEER_CONFIG is set but file does not exist: $PUPPETEER_CONFIG"
 fi
 
+# Build exclude arguments for find
+EXCLUDE_PATTERNS=${EXCLUDE_PATTERNS:-""}
+FIND_EXCLUDES=(-not -path "*/node_modules/*" -not -path "*/.git/*")
+if [ -n "$EXCLUDE_PATTERNS" ]; then
+    IFS=',' read -ra PATTERNS <<< "$EXCLUDE_PATTERNS"
+    for pattern in "${PATTERNS[@]}"; do
+        pattern=$(echo "$pattern" | xargs)  # trim whitespace
+        FIND_EXCLUDES+=(-not -path "*/${pattern}/*" -not -path "*/${pattern}")
+    done
+fi
+
 # Find Markdown files and store in array
-mapfile -t md_files < <(find "$INPUT_DIR" -name "*.md" -not -path "*/node_modules/*" -not -path "*/.git/*")
+mapfile -t md_files < <(find "$INPUT_DIR" -name "*.md" "${FIND_EXCLUDES[@]}")
 
 # Count processed files
 count=0

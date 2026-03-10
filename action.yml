@@ -59,6 +59,10 @@ inputs:
     description: 'ZIPファイル名（拡張子なし）'
     required: false
     default: 'documents'
+  exclude_patterns:
+    description: '除外パターン（カンマ区切り、findの-pathに渡すglob。例: spec,spec-pdf,drafts/*）'
+    required: false
+    default: ''
 
 outputs:
   tag_name:
@@ -79,6 +83,7 @@ runs:
         OUTPUT_FORMATS: ${{ inputs.output_formats }}
         DOCX_TEMPLATE_INPUT: ${{ inputs.docx_template }}
         HEADER_TEX_INPUT: ${{ inputs.header_tex }}
+        EXCLUDE_PATTERNS: ${{ inputs.exclude_patterns }}
       run: |
         mkdir -p ${{ inputs.output_dir }}
 
@@ -102,6 +107,7 @@ runs:
           -v ${{ github.workspace }}/${{ inputs.input_dir }}:/work/input:ro \
           -v ${{ github.workspace }}/${{ inputs.output_dir }}:/work/output \
           -e OUTPUT_FORMATS="$OUTPUT_FORMATS" \
+          -e EXCLUDE_PATTERNS="$EXCLUDE_PATTERNS" \
           $TEMPLATE_MOUNT $TEMPLATE_ENV \
           $HEADER_MOUNT $HEADER_ENV \
           md2pdf /work/input /work/output

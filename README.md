@@ -84,6 +84,15 @@ When you have multiple files in nested directories, use `release_as_zip` to bund
     zip_name: 'my-documents'
 ```
 
+### With Exclude Patterns
+
+```yaml
+- uses: linkbal/md2pdf@v1
+  with:
+    input_dir: 'docs'
+    exclude_patterns: 'spec,spec-pdf,drafts'
+```
+
 ## Input Parameters
 
 | Parameter | Description | Default |
@@ -101,6 +110,7 @@ When you have multiple files in nested directories, use `release_as_zip` to bund
 | `keep_releases` | Number of releases to keep (0 for unlimited) | `5` |
 | `release_as_zip` | Bundle files into a ZIP archive for release | `false` |
 | `zip_name` | ZIP file name (without extension) | `documents` |
+| `exclude_patterns` | Comma-separated directory/path patterns to exclude | (none) |
 
 ## Outputs
 
@@ -153,6 +163,7 @@ jobs:
 | `OUTPUT_FORMATS` | Output formats (comma-separated: `pdf`, `docx`) | `pdf,docx` |
 | `DOCX_TEMPLATE` | Path to reference DOCX template | (none) |
 | `HEADER_TEX` | Path to custom LaTeX header file | (none) |
+| `EXCLUDE_PATTERNS` | Comma-separated directory/path patterns to exclude | (none) |
 | `MMDC_PUPPETEER_CONFIG` | Path to Puppeteer config JSON for mermaid-cli | (none in local execution, `/usr/local/share/puppeteer-config.json` in Docker) |
 
 ### Examples
