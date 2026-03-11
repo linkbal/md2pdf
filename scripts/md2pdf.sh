@@ -1,12 +1,16 @@
 #!/bin/bash
 
-# Markdown to PDF/DOCX Conversion Script with Mermaid Support
+# Markdown/LaTeX to PDF/DOCX Conversion Script with Mermaid Support
 # Usage: ./md2pdf.sh [input_dir] [output_dir]
 # Example: ./md2pdf.sh ./proposal ./pdf
-# Example: ./md2pdf.sh (converts all .md files from . directory to ./pdf)
+# Example: ./md2pdf.sh (converts all .md/.tex files from . directory to ./pdf)
+#
+# Supported input formats:
+#   .md  - Converted via Pandoc + XeLaTeX (with Mermaid support)
+#   .tex - Compiled directly with XeLaTeX
 #
 # Environment variables:
-#   OUTPUT_FORMATS=pdf,docx       - Output formats (comma-separated)
+#   OUTPUT_FORMATS=pdf,docx       - Output formats (comma-separated, DOCX only for .md)
 #   DOCX_TEMPLATE=/path           - Path to reference DOCX template
 #   MMDC_PUPPETEER_CONFIG=/path   - Path to Puppeteer config JSON for mermaid-cli (mmdc)
 #
@@ -80,19 +84,22 @@ if [ -n "$EXCLUDE_PATTERNS" ]; then
     done
 fi
 
-# Find Markdown files and store in array
+# Find Markdown and LaTeX files and store in arrays
 mapfile -t md_files < <(find "$INPUT_DIR" -name "*.md" "${FIND_EXCLUDES[@]}")
+mapfile -t tex_files < <(find "$INPUT_DIR" -name "*.tex" "${FIND_EXCLUDES[@]}")
 
 # Count processed files
 count=0
 success_count=0
 
+total_files=$(( ${#md_files[@]} + ${#tex_files[@]} ))
+
 echo "========================================"
-echo "Markdown to PDF/DOCX Converter"
+echo "Markdown/LaTeX to PDF/DOCX Converter"
 echo "========================================"
 echo "Input directory: $INPUT_DIR"
 echo "Output directory: $OUTPUT_DIR"
-echo "Files to process: ${#md_files[@]}"
+echo "Files to process: $total_files (${#md_files[@]} md, ${#tex_files[@]} tex)"
 echo "Output formats: $OUTPUT_FORMATS"
 if [ -n "$DOCX_TEMPLATE" ]; then
     echo "DOCX template: $DOCX_TEMPLATE"
@@ -289,6 +296,71 @@ for md_file in "${md_files[@]}"; do
             echo "     Failed"
             local_success=false
         fi
+    fi
+
+    if [ "$local_success" = true ]; then
+        ((++success_count))
+    fi
+    ((++count))
+done
+
+# Process each LaTeX file (direct xelatex compilation, PDF only)
+for tex_file in "${tex_files[@]}"; do
+    # Calculate relative path
+    if [ "$INPUT_DIR" = "." ]; then
+        rel_path="$tex_file"
+    else
+        rel_path="${tex_file#$INPUT_DIR/}"
+    fi
+
+    dir_path=$(dirname "$rel_path")
+
+    # Create output directory
+    output_dir_path="$OUTPUT_DIR/$dir_path"
+    mkdir -p "$output_dir_path"
+
+    # Determine output file path
+    pdf_file="$OUTPUT_DIR/${rel_path%.tex}.pdf"
+
+    echo ""
+    echo "Converting (LaTeX): $tex_file"
+
+    local_success=true
+
+    if [ "$OUTPUT_PDF" = "true" ]; then
+        echo "  -> PDF: $pdf_file"
+
+        # Create a temp directory for aux files
+        tex_temp_dir="$TEMP_DIR/tex_build"
+        mkdir -p "$tex_temp_dir"
+
+        # Run xelatex twice for references/TOC
+        xelatex_success=true
+        for pass in 1 2; do
+            if ! xelatex -interaction=nonstopmode \
+                -output-directory="$tex_temp_dir" \
+                "$tex_file" > /dev/null 2>&1; then
+                if [ "$pass" -eq 1 ]; then
+                    xelatex_success=false
+                    break
+                fi
+            fi
+        done
+
+        if [ "$xelatex_success" = true ]; then
+            # Copy PDF to output directory
+            tex_basename=$(basename "${tex_file%.tex}")
+            cp "$tex_temp_dir/${tex_basename}.pdf" "$pdf_file"
+            echo "     Success"
+        else
+            echo "     Failed"
+            local_success=false
+        fi
+
+        # Clean up temp build files
+        rm -rf "$tex_temp_dir"
+    else
+        echo "  -> Skipped (PDF output disabled)"
     fi
 
     if [ "$local_success" = true ]; then
