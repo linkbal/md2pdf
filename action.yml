@@ -152,25 +152,30 @@ runs:
           git tag "$TAG" && git push origin "$TAG"
         fi
 
-    - name: リリースを作成（ZIP）
-      if: inputs.create_release == 'true' && inputs.release_as_zip == 'true'
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ steps.tag.outputs.name }}
-        name: ${{ inputs.release_name_prefix }} ${{ steps.tag.outputs.name }}
-        files: ${{ inputs.zip_name }}.zip
-        generate_release_notes: true
+    - name: リリースを作成しファイルをアップロード
+      if: inputs.create_release == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG_NAME: ${{ steps.tag.outputs.name }}
+        RELEASE_NAME: ${{ inputs.release_name_prefix }} ${{ steps.tag.outputs.name }}
+        OUTPUT_DIR: ${{ inputs.output_dir }}
+        RELEASE_AS_ZIP: ${{ inputs.release_as_zip }}
+        ZIP_NAME: ${{ inputs.zip_name }}
+      run: |
+        # リリースを作成
+        gh release create "$TAG_NAME" \
+          --title "$RELEASE_NAME" \
+          --generate-notes \
+          --latest
 
-    - name: リリースを作成（個別ファイル）
-      if: inputs.create_release == 'true' && inputs.release_as_zip != 'true'
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ steps.tag.outputs.name }}
-        name: ${{ inputs.release_name_prefix }} ${{ steps.tag.outputs.name }}
-        files: |
-          ${{ inputs.output_dir }}/**/*.pdf
-          ${{ inputs.output_dir }}/**/*.docx
-        generate_release_notes: true
+        # ファイルをアップロード
+        if [ "$RELEASE_AS_ZIP" = "true" ]; then
+          gh release upload "$TAG_NAME" "${ZIP_NAME}.zip" --clobber
+        else
+          find "$OUTPUT_DIR" -type f \( -name "*.pdf" -o -name "*.docx" \) -print0 | \
+            xargs -0 gh release upload "$TAG_NAME" --clobber
+        fi
 
     - name: 古いリリースを削除
       if: inputs.create_release == 'true' && inputs.keep_releases != '0'
