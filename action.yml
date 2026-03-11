@@ -139,18 +139,13 @@ runs:
         echo "Created ZIP archive: ${{ inputs.zip_name }}.zip"
         unzip -l ../${{ inputs.zip_name }}.zip
 
-    - name: タグを作成
+    - name: タグ名を生成
       if: inputs.create_release == 'true'
       id: tag
       shell: bash
       run: |
         TAG="v$(date +'%Y%m%d')-${GITHUB_SHA::7}"
         echo "name=$TAG" >> $GITHUB_OUTPUT
-        if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then
-          echo "Tag $TAG already exists, skipping creation"
-        else
-          git tag "$TAG" && git push origin "$TAG"
-        fi
 
     - name: リリースを作成しファイルをアップロード
       if: inputs.create_release == 'true'
@@ -163,7 +158,10 @@ runs:
         RELEASE_AS_ZIP: ${{ inputs.release_as_zip }}
         ZIP_NAME: ${{ inputs.zip_name }}
       run: |
-        # リリースを作成
+        # 既存リリースがあれば削除して再作成
+        gh release delete "$TAG_NAME" --yes --cleanup-tag 2>/dev/null || true
+        git tag -f "$TAG_NAME" && git push -f origin "$TAG_NAME"
+
         gh release create "$TAG_NAME" \
           --title "$RELEASE_NAME" \
           --generate-notes \
