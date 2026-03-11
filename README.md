@@ -8,6 +8,7 @@ A GitHub Action that converts Markdown to PDF and DOCX.
 - Automatic Mermaid diagram conversion
 - Automatic table of contents generation
 - DOCX output support (with template customization)
+- **LaTeX (.tex) direct compilation** — .tex files are compiled with XeLaTeX directly, giving full typographic control for documents like invoices and breakdowns
 - Automatic artifact and release creation
 
 ## Usage
@@ -83,6 +84,19 @@ When you have multiple files in nested directories, use `release_as_zip` to bund
     release_as_zip: true
     zip_name: 'my-documents'
 ```
+
+### With LaTeX Files
+
+`.tex` files in the input directory are compiled directly with XeLaTeX (no Pandoc conversion). This is useful for documents requiring precise typographic control, such as invoices or breakdowns.
+
+```yaml
+- uses: linkbal/md2pdf@v1
+  with:
+    input_dir: 'docs'
+    output_formats: 'pdf'
+```
+
+> **Note**: `.tex` files only produce PDF output. The `docx` format option is ignored for `.tex` files.
 
 ### With Exclude Patterns
 
