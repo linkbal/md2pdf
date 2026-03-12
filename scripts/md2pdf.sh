@@ -295,18 +295,19 @@ process_tex_images() {
         if pdftoppm -png -r 300 -singlefile "$generated_pdf" "$png_base" 2>/dev/null; then
             local png_file="${png_base}.png"
 
-            # Escape special characters in the reference for sed
-            local escaped_ref
-            escaped_ref=$(printf '%s\n' "$ref" | sed 's/[[\.*^$()+?{|]/\\&/g')
-            local escaped_png
-            escaped_png=$(printf '%s\n' "$png_file" | sed 's/[&/\]/\\&/g')
-
             # Extract the caption
             local caption
             caption=$(echo "$ref" | grep -oP '!\[\K[^\]]*')
 
             # Replace the .tex reference with the .png reference
-            sed -i "s|${escaped_ref}|![${caption}](${escaped_png})|g" "$input_file"
+            # Use awk for literal string replacement (no regex escaping issues)
+            local new_ref="![${caption}](${png_file})"
+            awk -v old="$ref" -v new="$new_ref" '{
+                while ((idx = index($0, old)) > 0) {
+                    $0 = substr($0, 1, idx-1) new substr($0, idx+length(old))
+                }
+                print
+            }' "$input_file" > "${input_file}.tmp" && mv "${input_file}.tmp" "$input_file"
 
             echo "  [tex-image] Success: $tex_path -> PNG"
         else
