@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-cjk \
     fonts-ipafont \
     fonts-liberation \
+    poppler-utils \
     xvfb \
     xauth \
     chromium \

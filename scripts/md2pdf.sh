@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Markdown/LaTeX to PDF/DOCX Conversion Script with Mermaid Support
+# Markdown/LaTeX to PDF/DOCX Conversion Script with Mermaid & TeX Image Support
 # Usage: ./md2pdf.sh [input_dir] [output_dir]
 # Example: ./md2pdf.sh ./proposal ./pdf
 # Example: ./md2pdf.sh (converts all .md/.tex files from . directory to ./pdf)
@@ -8,6 +8,12 @@
 # Supported input formats:
 #   .md  - Converted via Pandoc + XeLaTeX (with Mermaid support)
 #   .tex - Compiled directly with XeLaTeX
+#
+# TeX image embedding:
+#   When a Markdown file references a .tex file as an image, e.g.:
+#     ![Caption](path/to/chart.tex)
+#   the .tex file is compiled to a PNG image and embedded automatically.
+#   Referenced .tex files are excluded from standalone PDF generation.
 #
 # Environment variables:
 #   OUTPUT_FORMATS=pdf,docx       - Output formats (comma-separated, DOCX only for .md)
@@ -17,6 +23,7 @@
 # Requirements:
 # - pandoc
 # - xelatex (texlive-xetex, texlive-lang-japanese)
+# - pdftoppm (poppler-utils) - for TeX image conversion
 # - mermaid-cli (npm install -g @mermaid-js/mermaid-cli)
 # - fonts: Noto CJK fonts, Liberation fonts
 
@@ -83,6 +90,9 @@ if [ -n "$EXCLUDE_PATTERNS" ]; then
         FIND_EXCLUDES+=(-not -path "*/${pattern}/*" -not -path "*/${pattern}")
     done
 fi
+
+# Track .tex files referenced as images from Markdown (to skip in standalone processing)
+declare -A embedded_tex_files
 
 # Find Markdown and LaTeX files and store in arrays
 mapfile -t md_files < <(find "$INPUT_DIR" -name "*.md" "${FIND_EXCLUDES[@]}")
@@ -206,6 +216,108 @@ process_mermaid() {
     mv "$intermediate_file" "$temp_file"
 }
 
+# Function to convert .tex image references to PNG
+# Detects ![...](*.tex) in Markdown, compiles to PNG, and rewrites the reference.
+process_tex_images() {
+    local input_file="$1"
+    local md_source_dir="$2"
+
+    # Find all ![...](*.tex) references
+    local tex_refs
+    tex_refs=$(grep -oP '!\[[^\]]*\]\([^)]*\.tex\)' "$input_file" 2>/dev/null || true)
+
+    if [ -z "$tex_refs" ]; then
+        return
+    fi
+
+    echo "  [tex-image] Found .tex image references"
+
+    while IFS= read -r ref; do
+        # Extract the .tex path from ![...](path.tex)
+        local tex_path
+        tex_path=$(echo "$ref" | grep -oP '\(\K[^)]*\.tex')
+
+        # Resolve the full path relative to the Markdown source directory
+        local full_tex_path
+        if [[ "$tex_path" = /* ]]; then
+            full_tex_path="$tex_path"
+        else
+            full_tex_path="$md_source_dir/$tex_path"
+        fi
+
+        # Normalize the path
+        full_tex_path=$(realpath "$full_tex_path" 2>/dev/null || echo "$full_tex_path")
+
+        if [ ! -f "$full_tex_path" ]; then
+            echo "  [tex-image] Warning: $tex_path not found (resolved: $full_tex_path)"
+            continue
+        fi
+
+        echo "  [tex-image] Converting: $tex_path"
+
+        # Mark this .tex as embedded (to skip standalone processing later)
+        embedded_tex_files["$full_tex_path"]=1
+
+        # Create a unique build directory
+        local tex_build_dir="$TEMP_DIR/tex_img_$(echo "$full_tex_path" | md5sum | cut -c1-8)"
+        mkdir -p "$tex_build_dir"
+
+        # Compile with xelatex
+        local xelatex_ok=true
+        for pass in 1 2; do
+            if ! xelatex -interaction=nonstopmode \
+                -output-directory="$tex_build_dir" \
+                "$full_tex_path" > /dev/null 2>&1; then
+                if [ "$pass" -eq 1 ]; then
+                    xelatex_ok=false
+                    break
+                fi
+            fi
+        done
+
+        if [ "$xelatex_ok" = false ]; then
+            echo "  [tex-image] Error: xelatex failed for $tex_path"
+            continue
+        fi
+
+        # Find the generated PDF
+        local tex_basename
+        tex_basename=$(basename "${full_tex_path%.tex}")
+        local generated_pdf="$tex_build_dir/${tex_basename}.pdf"
+
+        if [ ! -f "$generated_pdf" ]; then
+            echo "  [tex-image] Error: PDF not generated for $tex_path"
+            continue
+        fi
+
+        # Convert PDF to PNG using pdftoppm (high resolution)
+        local png_base="$TEMP_DIR/tex_img_${tex_basename}"
+        if pdftoppm -png -r 300 -singlefile "$generated_pdf" "$png_base" 2>/dev/null; then
+            local png_file="${png_base}.png"
+
+            # Escape special characters in the reference for sed
+            local escaped_ref
+            escaped_ref=$(printf '%s\n' "$ref" | sed 's/[[\.*^$()+?{|]/\\&/g')
+            local escaped_png
+            escaped_png=$(printf '%s\n' "$png_file" | sed 's/[&/\]/\\&/g')
+
+            # Extract the caption
+            local caption
+            caption=$(echo "$ref" | grep -oP '!\[\K[^\]]*')
+
+            # Replace the .tex reference with the .png reference
+            sed -i "s|${escaped_ref}|![${caption}](${escaped_png})|g" "$input_file"
+
+            echo "  [tex-image] Success: $tex_path -> PNG"
+        else
+            echo "  [tex-image] Error: pdftoppm failed for $tex_path"
+        fi
+
+        # Clean up build directory
+        rm -rf "$tex_build_dir"
+    done <<< "$tex_refs"
+}
+
 # Process each Markdown file
 for md_file in "${md_files[@]}"; do
     # Calculate relative path
@@ -232,6 +344,9 @@ for md_file in "${md_files[@]}"; do
     temp_md_file="$TEMP_DIR/$rel_path"
     mkdir -p "$(dirname "$temp_md_file")"
     process_mermaid "$md_file" "$temp_md_file"
+
+    # Process .tex image references (![...](*.tex) -> PNG)
+    process_tex_images "$temp_md_file" "$(dirname "$md_file")"
 
     # Header file path (custom > Docker default > script directory)
     if [ -n "$HEADER_TEX" ] && [ -f "$HEADER_TEX" ]; then
@@ -306,6 +421,14 @@ done
 
 # Process each LaTeX file (direct xelatex compilation, PDF only)
 for tex_file in "${tex_files[@]}"; do
+    # Skip .tex files that were embedded as images in Markdown
+    full_tex_path=$(realpath "$tex_file" 2>/dev/null || echo "$tex_file")
+    if [ "${embedded_tex_files[$full_tex_path]+_}" ]; then
+        echo ""
+        echo "Skipping (embedded as image): $tex_file"
+        continue
+    fi
+
     # Calculate relative path
     if [ "$INPUT_DIR" = "." ]; then
         rel_path="$tex_file"
