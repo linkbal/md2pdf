@@ -134,10 +134,12 @@ runs:
       run: |
         echo "Contents of ${{ inputs.output_dir }}:"
         find ${{ inputs.output_dir }} -type f -ls
-        cd ${{ inputs.output_dir }}
-        zip -rv ../${{ inputs.zip_name }}.zip .
+        mkdir -p /tmp/${{ inputs.zip_name }}
+        cp -a ${{ inputs.output_dir }}/* /tmp/${{ inputs.zip_name }}/
+        cd /tmp
+        zip -rv ${{ github.workspace }}/${{ inputs.zip_name }}.zip ${{ inputs.zip_name }}
         echo "Created ZIP archive: ${{ inputs.zip_name }}.zip"
-        unzip -l ../${{ inputs.zip_name }}.zip
+        unzip -l ${{ github.workspace }}/${{ inputs.zip_name }}.zip
 
     - name: タグ名を生成
       if: inputs.create_release == 'true'
