@@ -267,7 +267,23 @@ postprocess_docx() {
             local inserted=false
             for style in Date Author Subtitle Title; do
                 if grep -q "w:val=\"${style}\"" "$doc_xml"; then
-                    sed -i "s|\(w:val=\"${style}\"[^<]*/></w:pPr>.*</w:p>\)|\1${pb}|" "$doc_xml"
+                    # Use awk for non-greedy matching (sed .* is greedy on single-line XML)
+                    awk -v style="$style" -v pb="$pb" '{
+                        idx = index($0, "w:val=\"" style "\"")
+                        if (idx > 0) {
+                            # Find the first </w:p> after the style match
+                            rest = substr($0, idx)
+                            wp_idx = index(rest, "</w:p>")
+                            if (wp_idx > 0) {
+                                insert_pos = idx + wp_idx + 4  # position after </w:p>
+                                printf "%s%s%s", substr($0, 1, insert_pos), pb, substr($0, insert_pos + 1)
+                            } else {
+                                printf "%s", $0
+                            }
+                        } else {
+                            printf "%s", $0
+                        }
+                    }' "$doc_xml" > "${doc_xml}.tmp" && mv "${doc_xml}.tmp" "$doc_xml"
                     inserted=true
                     break
                 fi
