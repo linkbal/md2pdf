@@ -1,4 +1,9 @@
-# サンプルドキュメント
+---
+title: "サンプルドキュメント"
+subtitle: "md2pdf 動作確認用"
+author: "Linkbal Inc."
+date: "2026-04-06"
+---
 
 これはmd2pdfの動作確認用サンプルです。
 

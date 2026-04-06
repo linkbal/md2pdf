@@ -216,6 +216,78 @@ process_mermaid() {
     mv "$intermediate_file" "$temp_file"
 }
 
+# Function to check if a Markdown file has title in YAML frontmatter
+has_title_frontmatter() {
+    local file="$1"
+    awk '
+    BEGIN { in_fm = 0 }
+    NR == 1 && /^---/ { in_fm = 1; next }
+    in_fm && /^---/ { exit }
+    in_fm && /^title:/ { print "yes"; exit }
+    END {}
+    ' "$file"
+}
+
+# Function to post-process DOCX:
+#   - Replace TOC heading "Table of Contents" with "目次"
+#   - Insert page break after title block (when has_title=true)
+postprocess_docx() {
+    local docx_file="$1"
+    local has_title="$2"
+    local work_dir="$TEMP_DIR/docx_fix"
+
+    mkdir -p "$work_dir"
+    unzip -q -o "$docx_file" -d "$work_dir"
+
+    local doc_xml="$work_dir/word/document.xml"
+    if [ ! -f "$doc_xml" ]; then
+        echo "  [docx] Warning: document.xml not found in DOCX"
+        rm -rf "$work_dir"
+        return
+    fi
+
+    local modified=false
+
+    # Replace TOC heading
+    if grep -q 'Table of Contents' "$doc_xml"; then
+        sed -i 's|Table of Contents|目次|g' "$doc_xml"
+        echo "  [docx] TOC heading changed to 目次"
+        modified=true
+    fi
+
+    # Insert page break after title block
+    if [ "$has_title" = "yes" ]; then
+        local pb='<w:p><w:r><w:br w:type="page"/></w:r></w:p>'
+
+        if grep -q '<w:sdt>' "$doc_xml"; then
+            sed -i "0,/<w:sdt>/s|<w:sdt>|${pb}<w:sdt>|" "$doc_xml"
+            echo "  [docx] Page break inserted after title block"
+            modified=true
+        else
+            local inserted=false
+            for style in Date Author Subtitle Title; do
+                if grep -q "w:val=\"${style}\"" "$doc_xml"; then
+                    sed -i "s|\(w:val=\"${style}\"[^<]*/></w:pPr>.*</w:p>\)|\1${pb}|" "$doc_xml"
+                    inserted=true
+                    break
+                fi
+            done
+            if [ "$inserted" = true ]; then
+                echo "  [docx] Page break inserted after title block"
+                modified=true
+            else
+                echo "  [docx] Warning: Could not find insertion point for page break"
+            fi
+        fi
+    fi
+
+    if [ "$modified" = true ]; then
+        (cd "$work_dir" && zip -q -r "$docx_file" .)
+    fi
+
+    rm -rf "$work_dir"
+}
+
 # Function to convert .tex image references to PNG
 # Detects ![...](*.tex) in Markdown, compiles to PNG, and rewrites the reference.
 process_tex_images() {
@@ -408,6 +480,8 @@ for md_file in "${md_files[@]}"; do
             --toc-depth=3 \
             "${docx_opts[@]}"; then
             echo "     Success"
+            # Post-process DOCX: TOC title + cover page break
+            postprocess_docx "$docx_file" "$(has_title_frontmatter "$md_file")"
         else
             echo "     Failed"
             local_success=false

@@ -9,3 +9,26 @@
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
+
+% --- Table of contents title in Japanese ---
+\renewcommand{\contentsname}{目次}
+
+% --- Cover page (title page) styling ---
+% When Markdown has YAML frontmatter with title/subtitle/author/date,
+% Pandoc calls \maketitle automatically. This customizes the title page layout.
+% Note: Pandoc appends subtitle to \@title with \par{\large subtitle},
+% so \@title contains both title and subtitle text.
+\makeatletter
+\renewcommand{\maketitle}{%
+  \begin{titlepage}
+    \centering
+    \vspace*{5cm}
+    {\Huge\bfseries \@title \par}
+    \vspace{3cm}
+    {\Large \@author \par}
+    \vspace{1cm}
+    {\large \@date \par}
+    \vfill
+  \end{titlepage}
+}
+\makeatother
