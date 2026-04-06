@@ -9,6 +9,7 @@ A GitHub Action that converts Markdown to PDF and DOCX.
 - Automatic table of contents generation
 - DOCX output support (with template customization)
 - **LaTeX (.tex) direct compilation** — .tex files are compiled with XeLaTeX directly, giving full typographic control for documents like invoices and breakdowns
+- **Cover page generation** from YAML frontmatter (title, subtitle, author, date)
 - Automatic artifact and release creation
 
 ## Usage
@@ -97,6 +98,26 @@ When you have multiple files in nested directories, use `release_as_zip` to bund
 ```
 
 > **Note**: `.tex` files only produce PDF output. The `docx` format option is ignored for `.tex` files.
+
+### With Cover Page (Title Page)
+
+Add YAML frontmatter to your Markdown file to automatically generate a cover page:
+
+```markdown
+---
+title: "提案書"
+subtitle: "〇〇プロジェクト"
+author: "株式会社リンクバル"
+date: "2026-04-06"
+---
+
+## 1. はじめに
+本文がここから始まる...
+```
+
+When `title` is present in the frontmatter, a dedicated title page is generated before the table of contents. The `subtitle`, `author`, and `date` fields are optional. If `title` is not present, no cover page is generated (existing behavior is preserved).
+
+> **Note**: Cover page generation applies to PDF output only. DOCX output uses Pandoc's default title block rendering.
 
 ### With Exclude Patterns
 

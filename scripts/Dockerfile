@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-ipafont \
     fonts-liberation \
     poppler-utils \
+    unzip \
+    zip \
     xvfb \
     xauth \
     chromium \
