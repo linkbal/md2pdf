@@ -138,6 +138,12 @@ process_mermaid() {
     local mermaid_counter=0
     local intermediate_file="$TEMP_DIR/intermediate.md"
 
+    # Clean any stale mermaid artifacts from previous invocations of this
+    # function (i.e. previous markdown files). Without this, awk's
+    # `print >> file` appends to the existing files, concatenating diagrams
+    # from different markdown inputs into a single malformed .mmd.
+    rm -f "$TEMP_DIR"/mermaid_*.mmd "$TEMP_DIR"/mermaid_*.png "$TEMP_DIR"/replacement_*.txt
+
     # First pass: extract mermaid blocks to separate files and mark positions
     awk -v temp_dir="$TEMP_DIR" '
     BEGIN { in_mermaid = 0; counter = 0; mermaid_file = "" }
