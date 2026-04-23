@@ -41,6 +41,7 @@ OUTPUT_DIR=${2:-"./pdf"}
 OUTPUT_FORMATS=${OUTPUT_FORMATS:-"pdf,docx"}
 DOCX_TEMPLATE=${DOCX_TEMPLATE:-""}
 HEADER_TEX=${HEADER_TEX:-""}
+EXTRA_HEADER_TEX=${EXTRA_HEADER_TEX:-""}
 
 # Determine output formats
 OUTPUT_PDF=false
@@ -115,7 +116,10 @@ if [ -n "$DOCX_TEMPLATE" ]; then
     echo "DOCX template: $DOCX_TEMPLATE"
 fi
 if [ -n "$HEADER_TEX" ]; then
-    echo "Custom header: $HEADER_TEX"
+    echo "Custom header (replace): $HEADER_TEX"
+fi
+if [ -n "$EXTRA_HEADER_TEX" ]; then
+    echo "Extra header (append): $EXTRA_HEADER_TEX"
 fi
 echo "========================================"
 
@@ -437,13 +441,26 @@ for md_file in "${md_files[@]}"; do
     # Process .tex image references (![...](*.tex) -> PNG)
     process_tex_images "$temp_md_file" "$(dirname "$md_file")"
 
-    # Header file path (custom > Docker default > script directory)
+    # Header file resolution:
+    #   - HEADER_TEX (replace mode): user file replaces the default entirely.
+    #     Backward-compatible; user must include everything they need.
+    #   - EXTRA_HEADER_TEX (append mode, recommended): default header is kept
+    #     and the user's file is appended after it via an additional -H option.
+    #   - If both are set, HEADER_TEX (replace) wins and EXTRA is ignored.
+    if [ -f "/usr/local/share/pandoc/header.tex" ]; then
+        DEFAULT_HEADER="/usr/local/share/pandoc/header.tex"
+    else
+        DEFAULT_HEADER="$(dirname "$0")/header.tex"
+    fi
+
+    EXTRA_HEADER_FILE=""
     if [ -n "$HEADER_TEX" ] && [ -f "$HEADER_TEX" ]; then
         HEADER_FILE="$HEADER_TEX"
-    elif [ -f "/usr/local/share/pandoc/header.tex" ]; then
-        HEADER_FILE="/usr/local/share/pandoc/header.tex"
     else
-        HEADER_FILE="$(dirname "$0")/header.tex"
+        HEADER_FILE="$DEFAULT_HEADER"
+        if [ -n "$EXTRA_HEADER_TEX" ] && [ -f "$EXTRA_HEADER_TEX" ]; then
+            EXTRA_HEADER_FILE="$EXTRA_HEADER_TEX"
+        fi
     fi
 
     local_success=true
@@ -471,6 +488,7 @@ for md_file in "${md_files[@]}"; do
             -V "urlcolor=blue" \
             -V "toccolor=black" \
             -H "$HEADER_FILE" \
+            ${EXTRA_HEADER_FILE:+-H "$EXTRA_HEADER_FILE"} \
             -V "block-headings=true"; then
             echo "     Success"
         else
