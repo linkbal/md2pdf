@@ -24,7 +24,11 @@ inputs:
     required: false
     default: ''
   header_tex:
-    description: 'カスタムLaTeXヘッダーファイルのパス（リポジトリからの相対パス）'
+    description: 'カスタムLaTeXヘッダーファイルのパス（既定ヘッダを置き換える。後方互換のため残置）'
+    required: false
+    default: ''
+  extra_header_tex:
+    description: '既定ヘッダに追記するLaTeXヘッダーファイルのパス（推奨: 日本語フォント等の既定設定を保ったまま追加指定のみ行える）'
     required: false
     default: ''
   upload_artifact:
@@ -83,6 +87,7 @@ runs:
         OUTPUT_FORMATS: ${{ inputs.output_formats }}
         DOCX_TEMPLATE_INPUT: ${{ inputs.docx_template }}
         HEADER_TEX_INPUT: ${{ inputs.header_tex }}
+        EXTRA_HEADER_TEX_INPUT: ${{ inputs.extra_header_tex }}
         EXCLUDE_PATTERNS: ${{ inputs.exclude_patterns }}
       run: |
         mkdir -p ${{ inputs.output_dir }}
@@ -95,12 +100,20 @@ runs:
           TEMPLATE_ENV="-e DOCX_TEMPLATE=/work/template.docx"
         fi
 
-        # カスタムヘッダーマウントオプションを構築
+        # カスタムヘッダーマウントオプションを構築（置き換え）
         HEADER_MOUNT=""
         HEADER_ENV=""
         if [ -n "$HEADER_TEX_INPUT" ] && [ -f "${{ github.workspace }}/$HEADER_TEX_INPUT" ]; then
           HEADER_MOUNT="-v ${{ github.workspace }}/$HEADER_TEX_INPUT:/work/header.tex:ro"
           HEADER_ENV="-e HEADER_TEX=/work/header.tex"
+        fi
+
+        # 追記用ヘッダーマウントオプションを構築（既定ヘッダに追加）
+        EXTRA_HEADER_MOUNT=""
+        EXTRA_HEADER_ENV=""
+        if [ -n "$EXTRA_HEADER_TEX_INPUT" ] && [ -f "${{ github.workspace }}/$EXTRA_HEADER_TEX_INPUT" ]; then
+          EXTRA_HEADER_MOUNT="-v ${{ github.workspace }}/$EXTRA_HEADER_TEX_INPUT:/work/extra-header.tex:ro"
+          EXTRA_HEADER_ENV="-e EXTRA_HEADER_TEX=/work/extra-header.tex"
         fi
 
         docker run --rm \
@@ -110,6 +123,7 @@ runs:
           -e EXCLUDE_PATTERNS="$EXCLUDE_PATTERNS" \
           $TEMPLATE_MOUNT $TEMPLATE_ENV \
           $HEADER_MOUNT $HEADER_ENV \
+          $EXTRA_HEADER_MOUNT $EXTRA_HEADER_ENV \
           md2pdf /work/input /work/output
 
     - name: 生成されたファイルを確認

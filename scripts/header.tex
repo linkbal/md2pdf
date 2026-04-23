@@ -13,6 +13,149 @@
 % --- Table of contents title in Japanese ---
 \renewcommand{\contentsname}{目次}
 
+% --- Fallback font for symbol glyphs missing in Liberation fonts ---
+% ★ / ※ / ① / → など、Liberation 系列に含まれないグリフを
+% Noto Sans CJK JP にフォールバックさせる。
+\usepackage{newunicodechar}
+\newfontfamily{\mdtpdffallbackfont}{Noto Sans CJK JP}
+\newcommand{\mdtpdffbc}[1]{{\mdtpdffallbackfont #1}}
+
+% Geometric Shapes (U+25A0-U+25FF)
+\newunicodechar{■}{\mdtpdffbc{■}}
+\newunicodechar{□}{\mdtpdffbc{□}}
+\newunicodechar{▲}{\mdtpdffbc{▲}}
+\newunicodechar{△}{\mdtpdffbc{△}}
+\newunicodechar{▼}{\mdtpdffbc{▼}}
+\newunicodechar{▽}{\mdtpdffbc{▽}}
+\newunicodechar{◀}{\mdtpdffbc{◀}}
+\newunicodechar{▶}{\mdtpdffbc{▶}}
+\newunicodechar{◆}{\mdtpdffbc{◆}}
+\newunicodechar{◇}{\mdtpdffbc{◇}}
+\newunicodechar{◉}{\mdtpdffbc{◉}}
+\newunicodechar{◎}{\mdtpdffbc{◎}}
+\newunicodechar{●}{\mdtpdffbc{●}}
+\newunicodechar{○}{\mdtpdffbc{○}}
+\newunicodechar{◯}{\mdtpdffbc{◯}}
+\newunicodechar{★}{\mdtpdffbc{★}}
+\newunicodechar{☆}{\mdtpdffbc{☆}}
+\newunicodechar{▪}{\mdtpdffbc{▪}}
+\newunicodechar{▫}{\mdtpdffbc{▫}}
+
+% Arrows (U+2190-U+21FF)
+\newunicodechar{←}{\mdtpdffbc{←}}
+\newunicodechar{↑}{\mdtpdffbc{↑}}
+\newunicodechar{→}{\mdtpdffbc{→}}
+\newunicodechar{↓}{\mdtpdffbc{↓}}
+\newunicodechar{↔}{\mdtpdffbc{↔}}
+\newunicodechar{↕}{\mdtpdffbc{↕}}
+\newunicodechar{↖}{\mdtpdffbc{↖}}
+\newunicodechar{↗}{\mdtpdffbc{↗}}
+\newunicodechar{↘}{\mdtpdffbc{↘}}
+\newunicodechar{↙}{\mdtpdffbc{↙}}
+\newunicodechar{⇐}{\mdtpdffbc{⇐}}
+\newunicodechar{⇑}{\mdtpdffbc{⇑}}
+\newunicodechar{⇒}{\mdtpdffbc{⇒}}
+\newunicodechar{⇓}{\mdtpdffbc{⇓}}
+\newunicodechar{⇔}{\mdtpdffbc{⇔}}
+\newunicodechar{⇕}{\mdtpdffbc{⇕}}
+
+% Dingbats / Check marks (U+2700-U+27BF)
+\newunicodechar{✓}{\mdtpdffbc{✓}}
+\newunicodechar{✔}{\mdtpdffbc{✔}}
+\newunicodechar{✕}{\mdtpdffbc{✕}}
+\newunicodechar{✖}{\mdtpdffbc{✖}}
+\newunicodechar{✗}{\mdtpdffbc{✗}}
+\newunicodechar{✘}{\mdtpdffbc{✘}}
+\newunicodechar{❶}{\mdtpdffbc{❶}}
+\newunicodechar{❷}{\mdtpdffbc{❷}}
+\newunicodechar{❸}{\mdtpdffbc{❸}}
+\newunicodechar{❹}{\mdtpdffbc{❹}}
+\newunicodechar{❺}{\mdtpdffbc{❺}}
+
+% Enclosed Alphanumerics (U+2460-U+24FF)
+\newunicodechar{①}{\mdtpdffbc{①}}
+\newunicodechar{②}{\mdtpdffbc{②}}
+\newunicodechar{③}{\mdtpdffbc{③}}
+\newunicodechar{④}{\mdtpdffbc{④}}
+\newunicodechar{⑤}{\mdtpdffbc{⑤}}
+\newunicodechar{⑥}{\mdtpdffbc{⑥}}
+\newunicodechar{⑦}{\mdtpdffbc{⑦}}
+\newunicodechar{⑧}{\mdtpdffbc{⑧}}
+\newunicodechar{⑨}{\mdtpdffbc{⑨}}
+\newunicodechar{⑩}{\mdtpdffbc{⑩}}
+\newunicodechar{⑪}{\mdtpdffbc{⑪}}
+\newunicodechar{⑫}{\mdtpdffbc{⑫}}
+\newunicodechar{⑬}{\mdtpdffbc{⑬}}
+\newunicodechar{⑭}{\mdtpdffbc{⑭}}
+\newunicodechar{⑮}{\mdtpdffbc{⑮}}
+\newunicodechar{⑯}{\mdtpdffbc{⑯}}
+\newunicodechar{⑰}{\mdtpdffbc{⑰}}
+\newunicodechar{⑱}{\mdtpdffbc{⑱}}
+\newunicodechar{⑲}{\mdtpdffbc{⑲}}
+\newunicodechar{⑳}{\mdtpdffbc{⑳}}
+
+% Miscellaneous Symbols (U+2600-U+26FF)
+\newunicodechar{☀}{\mdtpdffbc{☀}}
+\newunicodechar{☁}{\mdtpdffbc{☁}}
+\newunicodechar{☂}{\mdtpdffbc{☂}}
+\newunicodechar{☃}{\mdtpdffbc{☃}}
+\newunicodechar{☎}{\mdtpdffbc{☎}}
+\newunicodechar{☑}{\mdtpdffbc{☑}}
+\newunicodechar{☒}{\mdtpdffbc{☒}}
+\newunicodechar{♀}{\mdtpdffbc{♀}}
+\newunicodechar{♂}{\mdtpdffbc{♂}}
+\newunicodechar{♠}{\mdtpdffbc{♠}}
+\newunicodechar{♣}{\mdtpdffbc{♣}}
+\newunicodechar{♥}{\mdtpdffbc{♥}}
+\newunicodechar{♦}{\mdtpdffbc{♦}}
+\newunicodechar{♪}{\mdtpdffbc{♪}}
+\newunicodechar{♫}{\mdtpdffbc{♫}}
+\newunicodechar{⚠}{\mdtpdffbc{⚠}}
+\newunicodechar{⚡}{\mdtpdffbc{⚡}}
+\newunicodechar{⚙}{\mdtpdffbc{⚙}}
+
+% Reference / CJK-related punctuation
+\newunicodechar{※}{\mdtpdffbc{※}}
+\newunicodechar{№}{\mdtpdffbc{№}}
+\newunicodechar{℃}{\mdtpdffbc{℃}}
+\newunicodechar{℉}{\mdtpdffbc{℉}}
+\newunicodechar{℡}{\mdtpdffbc{℡}}
+\newunicodechar{™}{\mdtpdffbc{™}}
+\newunicodechar{©}{\mdtpdffbc{©}}
+\newunicodechar{®}{\mdtpdffbc{®}}
+
+% Currency
+\newunicodechar{€}{\mdtpdffbc{€}}
+\newunicodechar{£}{\mdtpdffbc{£}}
+\newunicodechar{¢}{\mdtpdffbc{¢}}
+
+% Mathematical / Misc technical
+\newunicodechar{≠}{\mdtpdffbc{≠}}
+\newunicodechar{≤}{\mdtpdffbc{≤}}
+\newunicodechar{≥}{\mdtpdffbc{≥}}
+\newunicodechar{±}{\mdtpdffbc{±}}
+\newunicodechar{×}{\mdtpdffbc{×}}
+\newunicodechar{÷}{\mdtpdffbc{÷}}
+\newunicodechar{∞}{\mdtpdffbc{∞}}
+\newunicodechar{√}{\mdtpdffbc{√}}
+\newunicodechar{∑}{\mdtpdffbc{∑}}
+\newunicodechar{∏}{\mdtpdffbc{∏}}
+\newunicodechar{∫}{\mdtpdffbc{∫}}
+\newunicodechar{∂}{\mdtpdffbc{∂}}
+
+% Box Drawing (U+2500-U+257F)
+\newunicodechar{─}{\mdtpdffbc{─}}
+\newunicodechar{│}{\mdtpdffbc{│}}
+\newunicodechar{┌}{\mdtpdffbc{┌}}
+\newunicodechar{┐}{\mdtpdffbc{┐}}
+\newunicodechar{└}{\mdtpdffbc{└}}
+\newunicodechar{┘}{\mdtpdffbc{┘}}
+\newunicodechar{├}{\mdtpdffbc{├}}
+\newunicodechar{┤}{\mdtpdffbc{┤}}
+\newunicodechar{┬}{\mdtpdffbc{┬}}
+\newunicodechar{┴}{\mdtpdffbc{┴}}
+\newunicodechar{┼}{\mdtpdffbc{┼}}
+
 % --- Cover page (title page) styling ---
 % When Markdown has YAML frontmatter with title/subtitle/author/date,
 % Pandoc calls \maketitle automatically. This customizes the title page layout.

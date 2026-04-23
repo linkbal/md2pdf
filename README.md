@@ -50,7 +50,23 @@ A GitHub Action that converts Markdown to PDF and DOCX.
     docx_template: 'templates/custom.docx'
 ```
 
-### With Custom LaTeX Header
+### Extending the LaTeX Header (recommended)
+
+Use `extra_header_tex` to **append** LaTeX directives to the default header. The built-in header already handles Japanese fonts (Noto Serif/Sans CJK JP), header/footer, table-of-contents localization, cover page styling, and a broad set of symbol-character fallbacks (★ ※ ① → ● ■ ▲ ✓ ⚠ など); with `extra_header_tex` those stay in effect and only your additions are layered on top.
+
+```yaml
+- uses: linkbal/md2pdf@v1
+  with:
+    input_dir: 'docs'
+    output_formats: 'pdf'
+    extra_header_tex: 'templates/extra-header.tex'
+```
+
+Use this when you want to, e.g., tweak `\geometry`, add packages, define additional `\newunicodechar` mappings, or customize `\maketitle` further.
+
+### Replacing the LaTeX Header Entirely (advanced)
+
+`header_tex` replaces the built-in header completely. **You must include the font setup, fancyhdr configuration, TOC/cover page customizations, and symbol fallbacks yourself** — otherwise Japanese rendering and standard styling will break. Prefer `extra_header_tex` unless you specifically need full control.
 
 ```yaml
 - uses: linkbal/md2pdf@v1
@@ -136,7 +152,8 @@ When `title` is present in the frontmatter, a dedicated title page is generated 
 | `output_dir` | Output directory | `output` |
 | `output_formats` | Output formats (comma-separated) | `pdf,docx` |
 | `docx_template` | Path to DOCX template | (none) |
-| `header_tex` | Path to custom LaTeX header file | (none) |
+| `header_tex` | Path to custom LaTeX header file (replaces the built-in header; advanced — prefer `extra_header_tex`) | (none) |
+| `extra_header_tex` | Path to LaTeX header snippet appended after the built-in header (recommended) | (none) |
 | `upload_artifact` | Upload as artifact | `true` |
 | `artifact_name` | Artifact name | `docs-output` |
 | `retention_days` | Artifact retention days | `30` |
