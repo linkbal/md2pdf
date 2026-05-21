@@ -5,7 +5,7 @@ A GitHub Action that converts Markdown to PDF and DOCX.
 ## Features
 
 - Japanese font support (Noto CJK fonts)
-- Automatic Mermaid diagram conversion
+- Automatic Mermaid diagram conversion (with optional per-diagram captions via `%% caption:` comment)
 - Automatic table of contents generation
 - DOCX output support (with template customization)
 - **LaTeX (.tex) direct compilation** — .tex files are compiled with XeLaTeX directly, giving full typographic control for documents like invoices and breakdowns
@@ -101,6 +101,23 @@ When you have multiple files in nested directories, use `release_as_zip` to bund
     release_as_zip: true
     zip_name: 'my-documents'
 ```
+
+### Mermaid Diagram Captions
+
+By default, every Mermaid diagram is inserted into the PDF/DOCX with the alt text `Mermaid Diagram`, which Pandoc renders as a figure caption such as `Figure 1: Mermaid Diagram`. To give each diagram a meaningful caption, add a `%% caption: <text>` comment inside the Mermaid block — `%%` is Mermaid's own comment syntax, so it is ignored by `mmdc` and only used by this action for the caption.
+
+````markdown
+```mermaid
+%% caption: 全体構成図 (本番)
+flowchart LR
+    user --> apache --> laravel
+    laravel --> db[(MySQL)]
+```
+````
+
+Renders as `Figure 1: 全体構成図 (本番)` in the generated PDF.
+
+If no `%% caption:` line is present, the action falls back to the existing `Mermaid Diagram` caption (backward-compatible — existing documents are unaffected).
 
 ### With LaTeX Files
 

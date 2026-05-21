@@ -178,6 +178,20 @@ process_mermaid() {
             continue
         fi
 
+        # Caption resolution:
+        #   If the mermaid source contains a comment line of the form
+        #     %% caption: <text>
+        #   use <text> as the Markdown image alt text (which Pandoc then
+        #   renders as the LaTeX figure caption / DOCX figure caption).
+        #   Falls back to "Mermaid Diagram" for backward compatibility.
+        #   %% is mermaid's comment syntax so the line itself is ignored by mmdc.
+        local caption="Mermaid Diagram"
+        local caption_line
+        caption_line=$(grep -m1 -E '^[[:space:]]*%%[[:space:]]*caption:' "$mermaid_file" || true)
+        if [ -n "$caption_line" ]; then
+            caption=$(printf '%s' "$caption_line" | sed -E 's/^[[:space:]]*%%[[:space:]]*caption:[[:space:]]*//')
+        fi
+
         local error_output
         local conversion_success
         local -a mmdc_opts=(-i "$mermaid_file" -o "$png_file" -t neutral -b white --width 1200 --height 800)
@@ -195,8 +209,16 @@ process_mermaid() {
         fi
 
         if [ "$conversion_success" = true ]; then
-            # Replace placeholder with image reference
-            sed -i "s|MERMAID_PLACEHOLDER_${i}|![Mermaid Diagram](${png_file})|" "$intermediate_file"
+            # Replace placeholder with image reference. Use awk rather than
+            # sed so captions containing characters that would need
+            # escaping in a sed expression (e.g. |, &, \) are passed through
+            # safely.
+            awk -v placeholder="MERMAID_PLACEHOLDER_${i}" \
+                -v replacement="![${caption}](${png_file})" '
+                $0 == placeholder { print replacement; next }
+                { print }
+            ' "$intermediate_file" > "${intermediate_file}.tmp" \
+                && mv "${intermediate_file}.tmp" "$intermediate_file"
         else
             # On failure, output error details and restore original code block
             echo "Error: Failed to convert Mermaid diagram $i"
