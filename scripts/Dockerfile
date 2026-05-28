@@ -39,6 +39,12 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV MMDC_PUPPETEER_CONFIG=/usr/local/share/puppeteer-config.json
 
+# UTF-8 locale: required for Pandoc to resolve non-ASCII (e.g. Japanese) image
+# file paths. Without this, the default POSIX locale causes
+# `[WARNING] Could not fetch resource ...` and images get replaced by alt text.
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
 # Create work directory
 WORKDIR /work
 
