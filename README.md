@@ -40,6 +40,18 @@ A GitHub Action that converts Markdown to PDF and DOCX.
     output_formats: 'docx'
 ```
 
+### Without a Table of Contents
+
+By default a table of contents is generated. Set `toc: 'false'` to disable it (useful for short documents of only a few pages).
+
+```yaml
+- uses: linkbal/md2pdf@v1
+  with:
+    input_dir: 'docs'
+    output_formats: 'pdf,docx'
+    toc: 'false'
+```
+
 ### With DOCX Template
 
 ```yaml
@@ -168,6 +180,7 @@ When `title` is present in the frontmatter, a dedicated title page is generated 
 | `input_dir` | Directory containing Markdown files | `docs` |
 | `output_dir` | Output directory | `output` |
 | `output_formats` | Output formats (comma-separated) | `pdf,docx` |
+| `toc` | Generate a table of contents (`true` / `false`) | `true` |
 | `docx_template` | Path to DOCX template | (none) |
 | `header_tex` | Path to custom LaTeX header file (replaces the built-in header; advanced — prefer `extra_header_tex`) | (none) |
 | `extra_header_tex` | Path to LaTeX header snippet appended after the built-in header (recommended) | (none) |
