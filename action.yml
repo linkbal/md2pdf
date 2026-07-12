@@ -19,6 +19,10 @@ inputs:
     description: '出力形式（カンマ区切り: pdf,docx）'
     required: false
     default: 'pdf,docx'
+  toc:
+    description: '目次（TOC）を生成するか（true / false）'
+    required: false
+    default: 'true'
   docx_template:
     description: 'DOCXテンプレートファイルのパス（リポジトリからの相対パス）'
     required: false
@@ -85,6 +89,7 @@ runs:
       shell: bash
       env:
         OUTPUT_FORMATS: ${{ inputs.output_formats }}
+        TOC_INPUT: ${{ inputs.toc }}
         DOCX_TEMPLATE_INPUT: ${{ inputs.docx_template }}
         HEADER_TEX_INPUT: ${{ inputs.header_tex }}
         EXTRA_HEADER_TEX_INPUT: ${{ inputs.extra_header_tex }}
@@ -120,6 +125,7 @@ runs:
           -v ${{ github.workspace }}/${{ inputs.input_dir }}:/work/input:ro \
           -v ${{ github.workspace }}/${{ inputs.output_dir }}:/work/output \
           -e OUTPUT_FORMATS="$OUTPUT_FORMATS" \
+          -e TOC="$TOC_INPUT" \
           -e EXCLUDE_PATTERNS="$EXCLUDE_PATTERNS" \
           $TEMPLATE_MOUNT $TEMPLATE_ENV \
           $HEADER_MOUNT $HEADER_ENV \

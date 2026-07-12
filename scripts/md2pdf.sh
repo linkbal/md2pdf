@@ -43,6 +43,13 @@ DOCX_TEMPLATE=${DOCX_TEMPLATE:-""}
 HEADER_TEX=${HEADER_TEX:-""}
 EXTRA_HEADER_TEX=${EXTRA_HEADER_TEX:-""}
 
+# Table of contents (default enabled; set TOC=false to disable)
+TOC=${TOC:-"true"}
+TOC_ARGS=()
+case "${TOC,,}" in
+    true|1|yes|on) TOC_ARGS=(--toc --toc-depth=3) ;;
+esac
+
 # Determine output formats
 OUTPUT_PDF=false
 OUTPUT_DOCX=false
@@ -500,8 +507,7 @@ for md_file in "${md_files[@]}"; do
             -o "$pdf_file" \
             --resource-path="$(dirname "$md_file"):$INPUT_DIR:$TEMP_DIR" \
             --pdf-engine=xelatex \
-            --toc \
-            --toc-depth=3 \
+            "${TOC_ARGS[@]}" \
             -V "papersize=a4" \
             -V "geometry:top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm" \
             -V "fontsize=11pt" \
@@ -538,8 +544,7 @@ for md_file in "${md_files[@]}"; do
         if pandoc "$temp_md_file" \
             -o "$docx_file" \
             --resource-path="$(dirname "$md_file"):$INPUT_DIR:$TEMP_DIR" \
-            --toc \
-            --toc-depth=3 \
+            "${TOC_ARGS[@]}" \
             "${docx_opts[@]}"; then
             echo "     Success"
             # Post-process DOCX: TOC title + cover page break
