@@ -12,6 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-fonts-extra \
     texlive-latex-extra \
     texlive-latex-recommended \
+    # ulem.sty を提供する。Pandoc は取り消し線 (~~text~~) を含む Markdown に対し
+    # \usepackage[normalem]{ulem} を出力するため、これが無いと
+    # "LaTeX Error: File `ulem.sty' not found." で変換が失敗する。
+    texlive-plain-generic \
     lmodern \
     fonts-noto-cjk \
     fonts-ipafont \
