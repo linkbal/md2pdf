@@ -13,6 +13,21 @@
 % --- Table of contents title in Japanese ---
 \renewcommand{\contentsname}{目次}
 
+% --- Figure / table caption labels in Japanese ---
+% "Figure 1: キャプション" -> "図 1: キャプション"
+% "Table 1: キャプション"  -> "表 1: キャプション"
+% 番号は LaTeX の figure / table カウンタで、Mermaid 図・通常の画像・
+% .tex 画像を区別せず出現順に振られる。documentclass=book のため、
+% `#` 見出し (= \chapter) がある文書では「図 1.1」のように章単位になる。
+%
+% 書式を変えたい場合は extra_header_tex で上書きできる:
+%   \usepackage[labelsep=quad]{caption}  % 「図 1  キャプション」(コロンなし)
+%   \counterwithout{figure}{chapter}     % 章をまたいだ通し番号にする
+%   \usepackage[labelformat=empty]{caption}  % 番号を出さない
+%   \renewcommand{\figurename}{Figure}   % 英語表記に戻す
+\renewcommand{\figurename}{図}
+\renewcommand{\tablename}{表}
+
 % --- Fallback font for symbol glyphs missing in Liberation fonts ---
 % ★ / ※ / ① / → など、Liberation 系列に含まれないグリフを
 % Noto Sans CJK JP にフォールバックさせる。
