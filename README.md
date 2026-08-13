@@ -117,7 +117,7 @@ When you have multiple files in nested directories, use `release_as_zip` to bund
 
 ### Mermaid Diagram Captions
 
-By default, every Mermaid diagram is inserted into the PDF/DOCX with the alt text `Mermaid Diagram`, which Pandoc renders as a figure caption such as `図 1: Mermaid Diagram`. To give each diagram a meaningful caption, add a `%% caption: <text>` comment inside the Mermaid block — `%%` is Mermaid's own comment syntax, so it is ignored by `mmdc` and only used by this action for the caption.
+By default, every Mermaid diagram is inserted into the PDF/DOCX with the alt text `Mermaid Diagram`, which Pandoc renders as a figure caption. In PDF output the caption is numbered, e.g. `図 1: Mermaid Diagram`; in DOCX it is the caption text alone, without a label or number. To give each diagram a meaningful caption, add a `%% caption: <text>` comment inside the Mermaid block — `%%` is Mermaid's own comment syntax, so it is ignored by `mmdc` and only used by this action for the caption.
 
 ````markdown
 ```mermaid
@@ -146,7 +146,9 @@ The diagram is then embedded as a plain image instead of a numbered figure, so i
 
 ### Figure and Table Caption Labels
 
-Figure captions are labeled `図` and table captions `表` by default. Numbering comes from LaTeX's `figure` / `table` counters, which are **shared across Mermaid diagrams, regular images, and embedded `.tex` images** — every captioned figure in a document takes the next number in document order.
+Figure captions are labeled `図` and table captions `表` by default.
+
+Figure numbering comes from LaTeX's `figure` counter, which is **shared across Mermaid diagrams, regular images, and embedded `.tex` images** — every captioned figure in a document takes the next number in document order. Tables are numbered by the separate `table` counter, so figures and tables never share numbers.
 
 Because the default document class is `book`, the number format depends on whether the document uses `#` (level-1) headings, which Pandoc maps to `\chapter`:
 
@@ -162,7 +164,9 @@ Use `extra_header_tex` to change the format:
 \usepackage[labelsep=quad]{caption}
 
 % Continuous numbering across chapters ("図 1" / "図 2" / "図 3")
+% The two counters are independent, so apply this to each one you want flattened
 \counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
 
 % Caption text only, no label or number
 \usepackage[labelformat=empty]{caption}
@@ -172,7 +176,7 @@ Use `extra_header_tex` to change the format:
 \renewcommand{\tablename}{Table}
 ```
 
-> **Note**: These labels apply to PDF output only. Pandoc's DOCX writer does not number figures — it writes the caption text alone in an `ImageCaption`-styled paragraph.
+> **Note**: These labels apply to PDF output only. Pandoc's DOCX writer numbers neither figures nor tables — it writes the caption text alone in an `ImageCaption` / `TableCaption`-styled paragraph.
 
 ### With LaTeX Files
 
