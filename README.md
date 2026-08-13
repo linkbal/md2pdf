@@ -5,6 +5,7 @@ A GitHub Action that converts Markdown to PDF and DOCX.
 ## Features
 
 - Japanese font support (Noto CJK fonts)
+- Japanese figure/table caption labels (`図 1: ...` / `表 1: ...`)
 - Automatic Mermaid diagram conversion (with optional per-diagram captions via `%% caption:` comment)
 - Automatic table of contents generation
 - DOCX output support (with template customization)
@@ -116,7 +117,7 @@ When you have multiple files in nested directories, use `release_as_zip` to bund
 
 ### Mermaid Diagram Captions
 
-By default, every Mermaid diagram is inserted into the PDF/DOCX with the alt text `Mermaid Diagram`, which Pandoc renders as a figure caption such as `Figure 1: Mermaid Diagram`. To give each diagram a meaningful caption, add a `%% caption: <text>` comment inside the Mermaid block — `%%` is Mermaid's own comment syntax, so it is ignored by `mmdc` and only used by this action for the caption.
+By default, every Mermaid diagram is inserted into the PDF/DOCX with the alt text `Mermaid Diagram`, which Pandoc renders as a figure caption. In PDF output the caption is numbered, e.g. `図 1: Mermaid Diagram`; in DOCX it is the caption text alone, without a label or number. To give each diagram a meaningful caption, add a `%% caption: <text>` comment inside the Mermaid block — `%%` is Mermaid's own comment syntax, so it is ignored by `mmdc` and only used by this action for the caption.
 
 ````markdown
 ```mermaid
@@ -127,9 +128,55 @@ flowchart LR
 ```
 ````
 
-Renders as `Figure 1: 全体構成図 (本番)` in the generated PDF.
+Renders as `図 1: 全体構成図 (本番)` in the generated PDF.
 
 If no `%% caption:` line is present, the action falls back to the existing `Mermaid Diagram` caption (backward-compatible — existing documents are unaffected).
+
+To suppress the caption (and the figure number) for a single diagram, leave the caption text empty:
+
+````markdown
+```mermaid
+%% caption:
+flowchart LR
+    a --> b
+```
+````
+
+The diagram is then embedded as a plain image instead of a numbered figure, so it neither shows a caption nor advances the figure counter. Note that a plain image is left-aligned rather than centered, because it is not wrapped in a LaTeX `figure` environment.
+
+### Figure and Table Caption Labels
+
+Figure captions are labeled `図` and table captions `表` by default.
+
+Figure numbering comes from LaTeX's `figure` counter, which is **shared across Mermaid diagrams, regular images, and embedded `.tex` images** — every captioned figure in a document takes the next number in document order. Tables are numbered by the separate `table` counter, so figures and tables never share numbers.
+
+Because the default document class is `book`, the number format depends on whether the document uses `#` (level-1) headings, which Pandoc maps to `\chapter`:
+
+| Document structure | Numbering |
+|---|---|
+| Has `#` headings | `図 1.1` / `図 1.2` / `図 2.1` (reset per chapter) |
+| Starts at `##` or lower | `図 1` / `図 2` / `図 3` |
+
+Use `extra_header_tex` to change the format:
+
+```latex
+% "図 1  キャプション" — no colon, wider separator (Japanese typographic convention)
+\usepackage[labelsep=quad]{caption}
+
+% Continuous numbering across chapters ("図 1" / "図 2" / "図 3")
+% The two counters are independent, so apply this to each one you want flattened
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+
+% Caption text only, no label or number
+\usepackage[labelformat=empty]{caption}
+
+% Revert to the previous English labels
+\renewcommand{\figurename}{Figure}
+\renewcommand{\tablename}{Table}
+```
+
+> **Note**: These labels apply to PDF output only. Pandoc's DOCX writer numbers neither figures nor tables — it writes the caption text alone in an `ImageCaption` / `TableCaption`-styled paragraph.
 
 ### With LaTeX Files
 
@@ -244,7 +291,8 @@ jobs:
 |----------|-------------|---------|
 | `OUTPUT_FORMATS` | Output formats (comma-separated: `pdf`, `docx`) | `pdf,docx` |
 | `DOCX_TEMPLATE` | Path to reference DOCX template | (none) |
-| `HEADER_TEX` | Path to custom LaTeX header file | (none) |
+| `HEADER_TEX` | Path to custom LaTeX header file (replaces the built-in header) | (none) |
+| `EXTRA_HEADER_TEX` | Path to LaTeX header snippet appended after the built-in header (recommended) | (none) |
 | `EXCLUDE_PATTERNS` | Comma-separated directory/path patterns to exclude | (none) |
 | `MMDC_PUPPETEER_CONFIG` | Path to Puppeteer config JSON for mermaid-cli | (none in local execution, `/usr/local/share/puppeteer-config.json` in Docker) |
 
