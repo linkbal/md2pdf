@@ -66,6 +66,11 @@ INPUT_DIR=${INPUT_DIR%/}
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
+# Mermaid 図の変換に失敗した件数。
+# 失敗しても処理自体は続行し (元のコードブロックに差し戻す)、最後に
+# 終了コードへ反映する。図が黙って消えたまま成功扱いになるのを防ぐため。
+MERMAID_FAILURES=0
+
 # Create temporary directory for mermaid images
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
@@ -230,6 +235,7 @@ process_mermaid() {
             # On failure, output error details and restore original code block
             echo "Error: Failed to convert Mermaid diagram $i"
             echo "Details: $error_output"
+            MERMAID_FAILURES=$((MERMAID_FAILURES + 1))
             # Restore original mermaid block
             # Restore original mermaid block
             # Create a temp file with the replacement
@@ -634,10 +640,24 @@ for tex_file in "${tex_files[@]}"; do
     ((++count))
 done
 
+failed_count=$((count - success_count))
+
 echo ""
 echo "========================================"
 echo "Conversion complete"
 echo "Files processed: $count"
 echo "Succeeded: $success_count"
-echo "Failed: $((count - success_count))"
+echo "Failed: $failed_count"
+if [ "$MERMAID_FAILURES" -gt 0 ]; then
+    echo "Mermaid diagrams failed: $MERMAID_FAILURES"
+fi
 echo "========================================"
+
+# 失敗があれば非ゼロで終了する。
+# 以前は最後の echo の終了コード (0) がそのまま返っていたため、
+# "Failed: 1" と表示しながら CI は成功扱いになっていた。
+# Mermaid の失敗も同様に扱う。図が元のコードブロックのまま出力に残るのは
+# 成果物としては欠落であり、黙って通してはならない。
+if [ "$failed_count" -gt 0 ] || [ "$MERMAID_FAILURES" -gt 0 ]; then
+    exit 1
+fi
