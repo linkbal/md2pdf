@@ -32,12 +32,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN npm install -g @mermaid-js/mermaid-cli
 
 # Puppeteer config for mmdc (mermaid-cli) with --no-sandbox for root execution
-RUN cat > /usr/local/share/puppeteer-config.json << 'EOF'
-{
-  "executablePath": "/usr/bin/chromium",
-  "args": ["--no-sandbox", "--disable-setuid-sandbox"]
-}
-EOF
+#
+# NOTE: printf ではなくヒアドキュメント (RUN cat > ... << 'EOF') を使うと、
+# BuildKit でしか動かない。従来ビルダー (DOCKER_BUILDKIT=0、buildx 未インストール)
+# では Dockerfile パーサがヒアドキュメントを解釈せず、cat が標準入力から何も
+# 受け取らないまま **0 バイトのファイル** を作る。結果 mmdc が
+# `JSON.parse("")` で落ち、すべての Mermaid 図が変換に失敗する。
+# action.yml は DOCKER_BUILDKIT=1 を指定しているので CI では顕在化しないが、
+# README が案内しているローカル実行 (docker build -t md2pdf ./scripts) で壊れる。
+# printf ならビルダーによらず同じ結果になる。
+RUN printf '%s\n' \
+    '{' \
+    '  "executablePath": "/usr/bin/chromium",' \
+    '  "args": ["--no-sandbox", "--disable-setuid-sandbox"]' \
+    '}' > /usr/local/share/puppeteer-config.json \
+ && node -e "JSON.parse(require('fs').readFileSync('/usr/local/share/puppeteer-config.json','utf8'))" \
+ && echo "puppeteer-config.json: OK"
 
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
