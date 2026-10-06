@@ -516,7 +516,7 @@ for md_file in "${md_files[@]}"; do
             "${TOC_ARGS[@]}" \
             -V "papersize=a4" \
             -V "geometry:top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm" \
-            -V "fontsize=11pt" \
+            -V "fontsize=12pt" \
             -V "linestretch=1.2" \
             -V "documentclass=book" \
             -V "classoption=oneside" \
